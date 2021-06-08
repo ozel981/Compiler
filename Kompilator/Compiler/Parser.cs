@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-PIILLQS
-// DateTime: 08.06.2021 21:09:39
+// DateTime: 09.06.2021 00:01:56
 // UserName: wpodm
-// Input file <.\compiler.y - 08.06.2021 21:09:36>
+// Input file <.\compiler.y - 09.06.2021 00:01:24>
 
 // options: lines gplex
 
@@ -21,7 +21,8 @@ namespace GardensPoint
 {
 public enum Tokens {error=2,EOF=3,Program=4,OpenBlock=5,Eof=6,
     CloseBlock=7,Int=8,Bool=9,Double=10,Coma=11,Semicolon=12,
-    Assignment=13,Identificator=14,IntNumber=15,RealNumber=16,Boolean=17};
+    Assignment=13,And=14,Or=15,Identificator=16,IntNumber=17,RealNumber=18,
+    Boolean=19};
 
 public struct ValueType
 #line 7 ".\compiler.y"
@@ -60,69 +61,79 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #pragma warning disable 649
   private static Dictionary<int, string> aliases;
 #pragma warning restore 649
-  private static Rule[] rules = new Rule[23];
-  private static State[] states = new State[30];
+  private static Rule[] rules = new Rule[26];
+  private static State[] states = new State[37];
   private static string[] nonTerms = new string[] {
       "type", "multideclarations", "body", "declaration", "statement", "singleOperation", 
-      "constant", "expression", "declarations", "statements", "start", "$accept", 
-      };
+      "constant", "expressionAssig", "expressionLogic", "expressionRelat", "declarations", 
+      "statements", "start", "$accept", "Anon@1", };
 
   static Parser() {
-    states[0] = new State(new int[]{4,3},new int[]{-11,1});
+    states[0] = new State(new int[]{4,3},new int[]{-13,1});
     states[1] = new State(new int[]{3,2});
     states[2] = new State(-1);
-    states[3] = new State(new int[]{5,6,6,-4},new int[]{-3,4});
+    states[3] = new State(new int[]{5,6},new int[]{-3,4});
     states[4] = new State(new int[]{6,5});
     states[5] = new State(-2);
-    states[6] = new State(-6,new int[]{-9,7});
-    states[7] = new State(new int[]{8,27,10,28,9,29,7,-9,14,-9,15,-9,16,-9,17,-9},new int[]{-10,8,-4,21,-1,22});
-    states[8] = new State(new int[]{7,9,14,14,15,18,16,19,17,20},new int[]{-5,10,-6,11,-8,13,-7,17});
+    states[6] = new State(-5,new int[]{-11,7});
+    states[7] = new State(new int[]{8,34,10,35,9,36,7,-9,16,-9,17,-9,18,-9,19,-9},new int[]{-12,8,-4,27,-1,28});
+    states[8] = new State(new int[]{7,9,16,14,17,21,18,22,19,23},new int[]{-5,10,-6,11,-8,13,-9,17,-7,26});
     states[9] = new State(-3);
     states[10] = new State(-8);
     states[11] = new State(new int[]{12,12});
     states[12] = new State(-10);
-    states[13] = new State(-12);
+    states[13] = new State(-11);
     states[14] = new State(new int[]{13,15});
-    states[15] = new State(new int[]{14,14,15,18,16,19,17,20},new int[]{-8,16,-7,17});
-    states[16] = new State(-13);
-    states[17] = new State(-14);
-    states[18] = new State(-15);
-    states[19] = new State(-16);
+    states[15] = new State(new int[]{16,14,17,21,18,22,19,23},new int[]{-8,16,-9,17,-7,26});
+    states[16] = new State(-12);
+    states[17] = new State(new int[]{14,18,15,24,12,-13});
+    states[18] = new State(new int[]{17,21,18,22,19,23},new int[]{-10,19,-7,20});
+    states[19] = new State(-14);
     states[20] = new State(-17);
-    states[21] = new State(-5);
-    states[22] = new State(-22,new int[]{-2,23});
-    states[23] = new State(new int[]{14,24});
-    states[24] = new State(new int[]{12,25,11,26});
-    states[25] = new State(-7);
-    states[26] = new State(-21);
-    states[27] = new State(-18);
-    states[28] = new State(-19);
-    states[29] = new State(-20);
+    states[21] = new State(-18);
+    states[22] = new State(-19);
+    states[23] = new State(-20);
+    states[24] = new State(new int[]{17,21,18,22,19,23},new int[]{-10,25,-7,20});
+    states[25] = new State(-15);
+    states[26] = new State(-16);
+    states[27] = new State(-4);
+    states[28] = new State(-6,new int[]{-15,29});
+    states[29] = new State(-25,new int[]{-2,30});
+    states[30] = new State(new int[]{16,31});
+    states[31] = new State(new int[]{12,32,11,33});
+    states[32] = new State(-7);
+    states[33] = new State(-24);
+    states[34] = new State(-21);
+    states[35] = new State(-22);
+    states[36] = new State(-23);
 
     for (int sNo = 0; sNo < states.Length; sNo++) states[sNo].number = sNo;
 
-    rules[1] = new Rule(-12, new int[]{-11,3});
-    rules[2] = new Rule(-11, new int[]{4,-3,6});
-    rules[3] = new Rule(-3, new int[]{5,-9,-10,7});
-    rules[4] = new Rule(-3, new int[]{});
-    rules[5] = new Rule(-9, new int[]{-9,-4});
-    rules[6] = new Rule(-9, new int[]{});
-    rules[7] = new Rule(-4, new int[]{-1,-2,14,12});
-    rules[8] = new Rule(-10, new int[]{-10,-5});
-    rules[9] = new Rule(-10, new int[]{});
+    rules[1] = new Rule(-14, new int[]{-13,3});
+    rules[2] = new Rule(-13, new int[]{4,-3,6});
+    rules[3] = new Rule(-3, new int[]{5,-11,-12,7});
+    rules[4] = new Rule(-11, new int[]{-11,-4});
+    rules[5] = new Rule(-11, new int[]{});
+    rules[6] = new Rule(-15, new int[]{});
+    rules[7] = new Rule(-4, new int[]{-1,-15,-2,16,12});
+    rules[8] = new Rule(-12, new int[]{-12,-5});
+    rules[9] = new Rule(-12, new int[]{});
     rules[10] = new Rule(-5, new int[]{-6,12});
-    rules[11] = new Rule(-5, new int[]{});
-    rules[12] = new Rule(-6, new int[]{-8});
-    rules[13] = new Rule(-8, new int[]{14,13,-8});
-    rules[14] = new Rule(-8, new int[]{-7});
-    rules[15] = new Rule(-7, new int[]{15});
-    rules[16] = new Rule(-7, new int[]{16});
-    rules[17] = new Rule(-7, new int[]{17});
-    rules[18] = new Rule(-1, new int[]{8});
-    rules[19] = new Rule(-1, new int[]{10});
-    rules[20] = new Rule(-1, new int[]{9});
-    rules[21] = new Rule(-2, new int[]{-2,14,11});
-    rules[22] = new Rule(-2, new int[]{});
+    rules[11] = new Rule(-6, new int[]{-8});
+    rules[12] = new Rule(-8, new int[]{16,13,-8});
+    rules[13] = new Rule(-8, new int[]{-9});
+    rules[14] = new Rule(-9, new int[]{-9,14,-10});
+    rules[15] = new Rule(-9, new int[]{-9,15,-10});
+    rules[16] = new Rule(-9, new int[]{-7});
+    rules[17] = new Rule(-10, new int[]{-7});
+    rules[18] = new Rule(-7, new int[]{17});
+    rules[19] = new Rule(-7, new int[]{18});
+    rules[20] = new Rule(-7, new int[]{19});
+    rules[21] = new Rule(-1, new int[]{8});
+    rules[22] = new Rule(-1, new int[]{10});
+    rules[23] = new Rule(-1, new int[]{9});
+    rules[24] = new Rule(-2, new int[]{-2,16,11});
+    rules[25] = new Rule(-2, new int[]{});
   }
 
   protected override void Initialize() {
@@ -138,77 +149,80 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     switch (action)
     {
       case 2: // start -> Program, body, Eof
-#line 30 ".\compiler.y"
-            {
-                Compiler.GenBody(ValueStack[ValueStack.Depth-2].node);
-            }
+#line 29 ".\compiler.y"
+                           { Compiler.GenBody(ValueStack[ValueStack.Depth-2].node); }
 #line default
         break;
       case 3: // body -> OpenBlock, declarations, statements, CloseBlock
+#line 32 ".\compiler.y"
+                                                       { CurrentSemanticValue.node = new Compiler.BodyNode(ValueStack[ValueStack.Depth-3].nodesList,ValueStack[ValueStack.Depth-2].nodesList); }
+#line default
+        break;
+      case 4: // declarations -> declarations, declaration
+#line 35 ".\compiler.y"
+                                        { ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
+#line default
+        break;
+      case 5: // declarations -> /* empty */
 #line 36 ".\compiler.y"
-            {
-                CurrentSemanticValue.node = new Compiler.BodyNode(ValueStack[ValueStack.Depth-3].nodesList,ValueStack[ValueStack.Depth-2].nodesList);
-            }
-#line default
-        break;
-      case 5: // declarations -> declarations, declaration
-#line 43 ".\compiler.y"
-                {
-                    ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node);
-                    CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList;
-                }
-#line default
-        break;
-      case 6: // declarations -> /* empty */
-#line 47 ".\compiler.y"
                { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
 #line default
         break;
-      case 7: // declaration -> type, multideclarations, Identificator, Semicolon
-#line 51 ".\compiler.y"
+      case 6: // Anon@1 -> /* empty */
+#line 40 ".\compiler.y"
+               {
+                Compiler.actualType = ValueStack[ValueStack.Depth-1].types;
+               }
+#line default
+        break;
+      case 7: // declaration -> type, Anon@1, multideclarations, Identificator, Semicolon
+#line 44 ".\compiler.y"
               {
-                    Compiler.actualType = ValueStack[ValueStack.Depth-4].types;
-                    if(Compiler.IsIdentyficatorOccupied(ValueStack[ValueStack.Depth-4].types,ValueStack[ValueStack.Depth-2].val))
+                    if(Compiler.IsIdentyficatorOccupied(ValueStack[ValueStack.Depth-5].types,ValueStack[ValueStack.Depth-2].val))
                     {
                         Console.WriteLine("line: error: such variable name already exists");
                     }
                     else
                     {
                         ValueStack[ValueStack.Depth-3].varNames.Add(ValueStack[ValueStack.Depth-2].val);
-                        CurrentSemanticValue.node = new Compiler.DeclarationNode(ValueStack[ValueStack.Depth-4].types,ValueStack[ValueStack.Depth-3].varNames);
+                        CurrentSemanticValue.node = new Compiler.DeclarationNode(ValueStack[ValueStack.Depth-5].types,ValueStack[ValueStack.Depth-3].varNames);
                     }
               }
 #line default
         break;
       case 8: // statements -> statements, statement
-#line 66 ".\compiler.y"
-                {
-                    ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node);
-                    CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList;
-                }
+#line 57 ".\compiler.y"
+                                   { ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
 #line default
         break;
       case 9: // statements -> /* empty */
-#line 70 ".\compiler.y"
+#line 58 ".\compiler.y"
               { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
 #line default
         break;
       case 10: // statement -> singleOperation, Semicolon
-#line 73 ".\compiler.y"
+#line 61 ".\compiler.y"
                                         { CurrentSemanticValue.node = new Compiler.StatementNode(ValueStack[ValueStack.Depth-2].node); }
 #line default
         break;
-      case 12: // singleOperation -> expression
-#line 77 ".\compiler.y"
-                             { CurrentSemanticValue.node = new Compiler.SingleOperationNode(ValueStack[ValueStack.Depth-1].expresionNode); }
+      case 11: // singleOperation -> expressionAssig
+#line 64 ".\compiler.y"
+                                  { CurrentSemanticValue.node = new Compiler.SingleOperationNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
-      case 13: // expression -> Identificator, Assignment, expression
-#line 81 ".\compiler.y"
+      case 12: // expressionAssig -> Identificator, Assignment, expressionAssig
+#line 68 ".\compiler.y"
             {
                 if(Compiler.variables.ContainsKey(ValueStack[ValueStack.Depth-3].val))
                 {
-                    CurrentSemanticValue.expresionNode = new Compiler.AssignmentExpresionNode(new Compiler.Pair(Compiler.variables[ValueStack[ValueStack.Depth-3].val],ValueStack[ValueStack.Depth-3].val), ValueStack[ValueStack.Depth-1].expresionNode);
+                    if(Compiler.variables[ValueStack[ValueStack.Depth-3].val] == ValueStack[ValueStack.Depth-1].expresionNode.Type)
+                    {
+                        CurrentSemanticValue.expresionNode = new Compiler.AssignmentExpresionNode(new Compiler.Pair(Compiler.variables[ValueStack[ValueStack.Depth-3].val],ValueStack[ValueStack.Depth-3].val), ValueStack[ValueStack.Depth-1].expresionNode);
+                    }
+                    else
+                    {
+                        Console.WriteLine("line: error: types not match");
+                    }
                 }
                 else
                 {
@@ -217,45 +231,73 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
             }
 #line default
         break;
-      case 14: // expression -> constant
-#line 92 ".\compiler.y"
+      case 13: // expressionAssig -> expressionLogic
+#line 85 ".\compiler.y"
+                              { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 14: // expressionLogic -> expressionLogic, And, expressionRelat
+#line 89 ".\compiler.y"
+                    { 
+                        if(ValueStack[ValueStack.Depth-3].expresionNode.Type == Compiler.Types.BooleanType && ValueStack[ValueStack.Depth-1].expresionNode.Type == Compiler.Types.BooleanType)
+                             CurrentSemanticValue.expresionNode = new Compiler.AndLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); 
+                        else
+                            Console.WriteLine("line: error: types should be bool type");
+                    }
+#line default
+        break;
+      case 15: // expressionLogic -> expressionLogic, Or, expressionRelat
+#line 96 ".\compiler.y"
                 {
-                    CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(ValueStack[ValueStack.Depth-1].constantType);
+                    if(ValueStack[ValueStack.Depth-3].expresionNode.Type == Compiler.Types.BooleanType && ValueStack[ValueStack.Depth-1].expresionNode.Type == Compiler.Types.BooleanType)
+                            CurrentSemanticValue.expresionNode = new Compiler.OrLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode);
+                    else
+                        Console.WriteLine("line: error: types should be bool type");
                 }
 #line default
         break;
-      case 15: // constant -> IntNumber
-#line 97 ".\compiler.y"
+      case 16: // expressionLogic -> constant
+#line 102 ".\compiler.y"
+                           { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(ValueStack[ValueStack.Depth-1].constantType); }
+#line default
+        break;
+      case 17: // expressionRelat -> constant
+#line 105 ".\compiler.y"
+                           { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(ValueStack[ValueStack.Depth-1].constantType); }
+#line default
+        break;
+      case 18: // constant -> IntNumber
+#line 108 ".\compiler.y"
                      { CurrentSemanticValue.constantType = new Compiler.Pair(Compiler.Types.IntegerType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
-      case 16: // constant -> RealNumber
-#line 98 ".\compiler.y"
+      case 19: // constant -> RealNumber
+#line 109 ".\compiler.y"
                       { CurrentSemanticValue.constantType = new Compiler.Pair(Compiler.Types.DoubleType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
-      case 17: // constant -> Boolean
-#line 99 ".\compiler.y"
+      case 20: // constant -> Boolean
+#line 110 ".\compiler.y"
                    { CurrentSemanticValue.constantType = new Compiler.Pair(Compiler.Types.BooleanType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
-      case 18: // type -> Int
-#line 102 ".\compiler.y"
+      case 21: // type -> Int
+#line 113 ".\compiler.y"
                    {CurrentSemanticValue.types = Compiler.Types.IntegerType;}
 #line default
         break;
-      case 19: // type -> Double
-#line 103 ".\compiler.y"
+      case 22: // type -> Double
+#line 114 ".\compiler.y"
                       {CurrentSemanticValue.types = Compiler.Types.DoubleType;}
 #line default
         break;
-      case 20: // type -> Bool
-#line 104 ".\compiler.y"
+      case 23: // type -> Bool
+#line 115 ".\compiler.y"
                     {CurrentSemanticValue.types = Compiler.Types.BooleanType;}
 #line default
         break;
-      case 21: // multideclarations -> multideclarations, Identificator, Coma
-#line 108 ".\compiler.y"
+      case 24: // multideclarations -> multideclarations, Identificator, Coma
+#line 119 ".\compiler.y"
                     {
                         if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,ValueStack[ValueStack.Depth-2].val))
                         {
@@ -269,8 +311,8 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
                     }
 #line default
         break;
-      case 22: // multideclarations -> /* empty */
-#line 119 ".\compiler.y"
+      case 25: // multideclarations -> /* empty */
+#line 130 ".\compiler.y"
                     { CurrentSemanticValue.varNames = new List<string>(); }
 #line default
         break;
@@ -288,7 +330,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 123 ".\compiler.y"
+#line 134 ".\compiler.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
 #line default

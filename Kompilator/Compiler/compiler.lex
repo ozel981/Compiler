@@ -18,6 +18,8 @@ Boolean             (true|false)
 ","           { return (int)Tokens.Coma; }
 ";"           { return (int)Tokens.Semicolon; }
 "="           { return (int)Tokens.Assignment; }
+"||"           { return (int)Tokens.Or; }
+"&&"           { return (int)Tokens.And; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
 {Boolean}     { yylval.val=yytext; return (int)Tokens.Boolean; }

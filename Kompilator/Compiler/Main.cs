@@ -37,6 +37,8 @@ public class Compiler
     {
         void EmitBodyCode();
         void EmitDeclarationCode(Types type, string variableName);
+        void EmitAndLogicalExpresionCode();
+        void EmitOrLogicalExpresionCode();
         void EmitConstantExprestionCode(Pair constant, string resultRegisterName);
         void EmitAssignmentExpresionCode(Pair variable, string registerName, string resultRegisterName);
     }
@@ -54,11 +56,16 @@ public class Compiler
 
     public class LLVMCodeEmiter : ICodeEmiter
     {
+        public void EmitAndLogicalExpresionCode()
+        {
+            EmitCode("TODO: emit AND code");
+        }
+
         public void EmitAssignmentExpresionCode(Pair variable, string registerNumber, string resultRegisterNumber)
         {
             string typeString = GetTypeString(variable.Type);
-            EmitCode($"%tmp{registerNumber} {typeString}* %tmp{resultRegisterNumber}");
             EmitCode($"store {typeString} %tmp{registerNumber}, {typeString}* %{variable.Value}");
+            EmitCode($"%tmp{registerNumber} = load {typeString}* %tmp{resultRegisterNumber}");
         }
 
         public void EmitBodyCode()
@@ -69,13 +76,18 @@ public class Compiler
         public void EmitConstantExprestionCode(Pair constant, string resultRegisterNumber)
         {
             string typeString = GetTypeString(constant.Type);
-            EmitCode($"store {typeString} %tmp{resultRegisterNumber}, {constant.Value}");
+            EmitCode($"%tmp{resultRegisterNumber} = add {typeString} 0, {constant.Value}");
         }
 
         public void EmitDeclarationCode(Types type, string variableName)
         {
             string typeString = GetTypeString(type);
             EmitCode($"%{variableName} = alloca {typeString}");
+        }
+
+        public void EmitOrLogicalExpresionCode()
+        {
+            EmitCode("TODO: emit OR code");
         }
     }
 
@@ -147,6 +159,11 @@ public class Compiler
 
     public abstract class ExpresionNode : INode
     {
+        public Types Type;
+        public ExpresionNode(Types type)
+        {
+            this.Type = type;
+        }
         public abstract void EmitCode(ICodeEmiter codeEmiter);
 
         public abstract void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName);
@@ -155,7 +172,7 @@ public class Compiler
     public class ConstantExpresionNode : ExpresionNode
     {
         Pair constant;
-        public ConstantExpresionNode(Pair constant)
+        public ConstantExpresionNode(Pair constant) : base(constant.Type)
         {
             this.constant = constant;
         }
@@ -171,11 +188,54 @@ public class Compiler
         }
     }
 
+    public abstract class LogicalExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        public LogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode) : base(Types.BooleanType)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+        }
+
+        public override void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string registerNumber = registersCount++.ToString();
+            EmitExpresionCode(codeEmiter, registerNumber);
+        }
+    }
+
+    public class AndLogicalExpresionNode : LogicalExpresionNode
+    {
+        public AndLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode) { }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerNumber)
+        {
+            codeEmiter.EmitAndLogicalExpresionCode();
+            rightExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
+            leftExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
+        }
+    }
+
+    public class OrLogicalExpresionNode : LogicalExpresionNode
+    {
+        public OrLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode) { }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerNumber)
+        {
+            codeEmiter.EmitOrLogicalExpresionCode();
+            rightExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
+            leftExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
+        }
+    }
+
     public class AssignmentExpresionNode : ExpresionNode
     {
         ExpresionNode expresionNode;
         Pair variable;
-        public AssignmentExpresionNode(Pair variable, ExpresionNode expresionNode)
+        public AssignmentExpresionNode(Pair variable, ExpresionNode expresionNode) : base(variable.Type)
         {
             this.expresionNode = expresionNode;
             this.variable = variable;
