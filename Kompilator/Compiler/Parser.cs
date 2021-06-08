@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-PIILLQS
-// DateTime: 30.05.2021 13:31:09
+// DateTime: 08.06.2021 21:09:39
 // UserName: wpodm
-// Input file <.\gen_predef.y - 30.05.2021 13:29:15>
+// Input file <.\compiler.y - 08.06.2021 21:09:36>
 
 // options: lines gplex
 
@@ -19,15 +19,20 @@ using QUT.Gppg;
 
 namespace GardensPoint
 {
-public enum Tokens {error=2,EOF=3,Print=4,Exit=5,Assign=6,
-    Plus=7,Minus=8,Multiplies=9,Divides=10,OpenPar=11,ClosePar=12,
-    Endl=13,Eof=14,Error=15,Ident=16,IntNumber=17,RealNumber=18};
+public enum Tokens {error=2,EOF=3,Program=4,OpenBlock=5,Eof=6,
+    CloseBlock=7,Int=8,Bool=9,Double=10,Coma=11,Semicolon=12,
+    Assignment=13,Identificator=14,IntNumber=15,RealNumber=16,Boolean=17};
 
 public struct ValueType
-#line 7 ".\gen_predef.y"
+#line 7 ".\compiler.y"
 {
-public string  val;
-public char    type;
+public List<string> varNames;
+public List<Compiler.INode> nodesList;
+public string val;
+public Compiler.Types types;
+public Compiler.INode node;
+public Compiler.Pair constantType;
+public Compiler.ExpresionNode expresionNode;
 }
 #line default
 // Abstract base class for GPLEX scanners
@@ -55,79 +60,69 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #pragma warning disable 649
   private static Dictionary<int, string> aliases;
 #pragma warning restore 649
-  private static Rule[] rules = new Rule[25];
-  private static State[] states = new State[39];
+  private static Rule[] rules = new Rule[23];
+  private static State[] states = new State[30];
   private static string[] nonTerms = new string[] {
-      "line", "exp", "term", "factor", "start", "$accept", "Anon@1", "end", "Anon@2", 
+      "type", "multideclarations", "body", "declaration", "statement", "singleOperation", 
+      "constant", "expression", "declarations", "statements", "start", "$accept", 
       };
 
   static Parser() {
-    states[0] = new State(new int[]{4,4,16,26,5,31,2,34,14,37},new int[]{-5,1,-1,38});
-    states[1] = new State(new int[]{3,2,4,4,16,26,5,31,2,34,14,37},new int[]{-1,3});
+    states[0] = new State(new int[]{4,3},new int[]{-11,1});
+    states[1] = new State(new int[]{3,2});
     states[2] = new State(-1);
-    states[3] = new State(-2);
-    states[4] = new State(-4,new int[]{-7,5});
-    states[5] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-2,6,-3,23,-4,22});
-    states[6] = new State(new int[]{7,8,8,15,13,24,14,25},new int[]{-8,7});
-    states[7] = new State(-5);
-    states[8] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-3,9,-4,22});
-    states[9] = new State(new int[]{9,10,10,17,7,-15,8,-15,13,-15,14,-15,12,-15});
-    states[10] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-4,11});
-    states[11] = new State(-18);
-    states[12] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-2,13,-3,23,-4,22});
-    states[13] = new State(new int[]{12,14,7,8,8,15});
-    states[14] = new State(-21);
-    states[15] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-3,16,-4,22});
-    states[16] = new State(new int[]{9,10,10,17,7,-16,8,-16,13,-16,14,-16,12,-16});
-    states[17] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-4,18});
-    states[18] = new State(-19);
-    states[19] = new State(-22);
-    states[20] = new State(-23);
-    states[21] = new State(-24);
-    states[22] = new State(-20);
-    states[23] = new State(new int[]{9,10,10,17,7,-17,8,-17,13,-17,14,-17,12,-17});
-    states[24] = new State(-13);
-    states[25] = new State(-14);
-    states[26] = new State(new int[]{6,27});
-    states[27] = new State(-6,new int[]{-9,28});
-    states[28] = new State(new int[]{11,12,17,19,18,20,16,21},new int[]{-2,29,-3,23,-4,22});
-    states[29] = new State(new int[]{7,8,8,15,13,24,14,25},new int[]{-8,30});
-    states[30] = new State(-7);
-    states[31] = new State(new int[]{13,32,14,33});
-    states[32] = new State(-8);
-    states[33] = new State(-9);
-    states[34] = new State(new int[]{13,35,14,36});
-    states[35] = new State(-10);
-    states[36] = new State(-11);
-    states[37] = new State(-12);
-    states[38] = new State(-3);
+    states[3] = new State(new int[]{5,6,6,-4},new int[]{-3,4});
+    states[4] = new State(new int[]{6,5});
+    states[5] = new State(-2);
+    states[6] = new State(-6,new int[]{-9,7});
+    states[7] = new State(new int[]{8,27,10,28,9,29,7,-9,14,-9,15,-9,16,-9,17,-9},new int[]{-10,8,-4,21,-1,22});
+    states[8] = new State(new int[]{7,9,14,14,15,18,16,19,17,20},new int[]{-5,10,-6,11,-8,13,-7,17});
+    states[9] = new State(-3);
+    states[10] = new State(-8);
+    states[11] = new State(new int[]{12,12});
+    states[12] = new State(-10);
+    states[13] = new State(-12);
+    states[14] = new State(new int[]{13,15});
+    states[15] = new State(new int[]{14,14,15,18,16,19,17,20},new int[]{-8,16,-7,17});
+    states[16] = new State(-13);
+    states[17] = new State(-14);
+    states[18] = new State(-15);
+    states[19] = new State(-16);
+    states[20] = new State(-17);
+    states[21] = new State(-5);
+    states[22] = new State(-22,new int[]{-2,23});
+    states[23] = new State(new int[]{14,24});
+    states[24] = new State(new int[]{12,25,11,26});
+    states[25] = new State(-7);
+    states[26] = new State(-21);
+    states[27] = new State(-18);
+    states[28] = new State(-19);
+    states[29] = new State(-20);
 
     for (int sNo = 0; sNo < states.Length; sNo++) states[sNo].number = sNo;
 
-    rules[1] = new Rule(-6, new int[]{-5,3});
-    rules[2] = new Rule(-5, new int[]{-5,-1});
-    rules[3] = new Rule(-5, new int[]{-1});
-    rules[4] = new Rule(-7, new int[]{});
-    rules[5] = new Rule(-1, new int[]{4,-7,-2,-8});
+    rules[1] = new Rule(-12, new int[]{-11,3});
+    rules[2] = new Rule(-11, new int[]{4,-3,6});
+    rules[3] = new Rule(-3, new int[]{5,-9,-10,7});
+    rules[4] = new Rule(-3, new int[]{});
+    rules[5] = new Rule(-9, new int[]{-9,-4});
     rules[6] = new Rule(-9, new int[]{});
-    rules[7] = new Rule(-1, new int[]{16,6,-9,-2,-8});
-    rules[8] = new Rule(-1, new int[]{5,13});
-    rules[9] = new Rule(-1, new int[]{5,14});
-    rules[10] = new Rule(-1, new int[]{2,13});
-    rules[11] = new Rule(-1, new int[]{2,14});
-    rules[12] = new Rule(-1, new int[]{14});
-    rules[13] = new Rule(-8, new int[]{13});
-    rules[14] = new Rule(-8, new int[]{14});
-    rules[15] = new Rule(-2, new int[]{-2,7,-3});
-    rules[16] = new Rule(-2, new int[]{-2,8,-3});
-    rules[17] = new Rule(-2, new int[]{-3});
-    rules[18] = new Rule(-3, new int[]{-3,9,-4});
-    rules[19] = new Rule(-3, new int[]{-3,10,-4});
-    rules[20] = new Rule(-3, new int[]{-4});
-    rules[21] = new Rule(-4, new int[]{11,-2,12});
-    rules[22] = new Rule(-4, new int[]{17});
-    rules[23] = new Rule(-4, new int[]{18});
-    rules[24] = new Rule(-4, new int[]{16});
+    rules[7] = new Rule(-4, new int[]{-1,-2,14,12});
+    rules[8] = new Rule(-10, new int[]{-10,-5});
+    rules[9] = new Rule(-10, new int[]{});
+    rules[10] = new Rule(-5, new int[]{-6,12});
+    rules[11] = new Rule(-5, new int[]{});
+    rules[12] = new Rule(-6, new int[]{-8});
+    rules[13] = new Rule(-8, new int[]{14,13,-8});
+    rules[14] = new Rule(-8, new int[]{-7});
+    rules[15] = new Rule(-7, new int[]{15});
+    rules[16] = new Rule(-7, new int[]{16});
+    rules[17] = new Rule(-7, new int[]{17});
+    rules[18] = new Rule(-1, new int[]{8});
+    rules[19] = new Rule(-1, new int[]{10});
+    rules[20] = new Rule(-1, new int[]{9});
+    rules[21] = new Rule(-2, new int[]{-2,14,11});
+    rules[22] = new Rule(-2, new int[]{});
   }
 
   protected override void Initialize() {
@@ -142,178 +137,141 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #pragma warning disable 162, 1522
     switch (action)
     {
-      case 2: // start -> start, line
-#line 19 ".\gen_predef.y"
-                       { ++lineno; }
+      case 2: // start -> Program, body, Eof
+#line 30 ".\compiler.y"
+            {
+                Compiler.GenBody(ValueStack[ValueStack.Depth-2].node);
+            }
 #line default
         break;
-      case 3: // start -> line
-#line 20 ".\gen_predef.y"
-                 { ++lineno; }
+      case 3: // body -> OpenBlock, declarations, statements, CloseBlock
+#line 36 ".\compiler.y"
+            {
+                CurrentSemanticValue.node = new Compiler.BodyNode(ValueStack[ValueStack.Depth-3].nodesList,ValueStack[ValueStack.Depth-2].nodesList);
+            }
 #line default
         break;
-      case 4: // Anon@1 -> /* empty */
-#line 24 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("// linia {0,3} :  "+Compiler.source[lineno-1],lineno);
-               Compiler.EmitCode("ldstr \"  Result: {0}{1}\"");
-               }
+      case 5: // declarations -> declarations, declaration
+#line 43 ".\compiler.y"
+                {
+                    ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node);
+                    CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList;
+                }
 #line default
         break;
-      case 5: // line -> Print, Anon@1, exp, end
-#line 29 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("box [mscorlib]System.{0}",ValueStack[ValueStack.Depth-2].type=='i'?"Int32":"Double");
-               Compiler.EmitCode("ldstr \"{0}\"",ValueStack[ValueStack.Depth-2].type=='i'?"i":"r");
-               Compiler.EmitCode("call void [mscorlib]System.Console::WriteLine(string,object,object)");
-               Compiler.EmitCode("");
-               }
+      case 6: // declarations -> /* empty */
+#line 47 ".\compiler.y"
+               { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
 #line default
         break;
-      case 6: // Anon@2 -> /* empty */
-#line 36 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("// linia {0,3} :  "+Compiler.source[lineno-1],lineno);
-               }
+      case 7: // declaration -> type, multideclarations, Identificator, Semicolon
+#line 51 ".\compiler.y"
+              {
+                    Compiler.actualType = ValueStack[ValueStack.Depth-4].types;
+                    if(Compiler.IsIdentyficatorOccupied(ValueStack[ValueStack.Depth-4].types,ValueStack[ValueStack.Depth-2].val))
+                    {
+                        Console.WriteLine("line: error: such variable name already exists");
+                    }
+                    else
+                    {
+                        ValueStack[ValueStack.Depth-3].varNames.Add(ValueStack[ValueStack.Depth-2].val);
+                        CurrentSemanticValue.node = new Compiler.DeclarationNode(ValueStack[ValueStack.Depth-4].types,ValueStack[ValueStack.Depth-3].varNames);
+                    }
+              }
 #line default
         break;
-      case 7: // line -> Ident, Assign, Anon@2, exp, end
-#line 40 ".\gen_predef.y"
-               {
-               if ( ValueStack[ValueStack.Depth-5].val[0]=='@' && ValueStack[ValueStack.Depth-2].type!='i' )
-                   {
-                   Console.WriteLine("  line {0,3}:  semantic error - cannot convert real to int",lineno);
-                   ++Compiler.errors;
-                   }
-               else
-                   {
-                   if ( ValueStack[ValueStack.Depth-5].val[0]=='$' && ValueStack[ValueStack.Depth-2].type!='r' )
-                       Compiler.EmitCode("conv.r8");
-                   Compiler.EmitCode("stloc _{0}{1}", ValueStack[ValueStack.Depth-5].val[0]=='@'?'i':'r', ValueStack[ValueStack.Depth-5].val[1]);
-                   Compiler.EmitCode("");
-                   }
-               }
+      case 8: // statements -> statements, statement
+#line 66 ".\compiler.y"
+                {
+                    ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node);
+                    CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList;
+                }
 #line default
         break;
-      case 8: // line -> Exit, Endl
-#line 55 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("// linia {0,3} :  "+Compiler.source[lineno-1],lineno);
-               Compiler.EmitCode("ldstr \"\\nEnd of execution\\n\"");
-               Compiler.EmitCode("call void [mscorlib]System.Console::WriteLine(string)");
-               Compiler.EmitCode("");
-               YYAccept();
-               }
+      case 9: // statements -> /* empty */
+#line 70 ".\compiler.y"
+              { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
 #line default
         break;
-      case 9: // line -> Exit, Eof
-#line 63 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("// linia {0,3} :  "+Compiler.source[lineno-1],lineno);
-               Compiler.EmitCode("ldstr \"\\nEnd of execution\\n\"");
-               Compiler.EmitCode("call void [mscorlib]System.Console::WriteLine(string)");
-               Compiler.EmitCode("");
-               YYAccept();
-               }
+      case 10: // statement -> singleOperation, Semicolon
+#line 73 ".\compiler.y"
+                                        { CurrentSemanticValue.node = new Compiler.StatementNode(ValueStack[ValueStack.Depth-2].node); }
 #line default
         break;
-      case 10: // line -> error, Endl
-#line 71 ".\gen_predef.y"
-               {
-               Console.WriteLine("  line {0,3}:  syntax error",lineno);
-               ++Compiler.errors;
-               yyerrok();
-               }
+      case 12: // singleOperation -> expression
+#line 77 ".\compiler.y"
+                             { CurrentSemanticValue.node = new Compiler.SingleOperationNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
-      case 11: // line -> error, Eof
-#line 77 ".\gen_predef.y"
-               {
-               Console.WriteLine("  line {0,3}:  syntax error",lineno);
-               ++Compiler.errors;
-               yyerrok();
-               YYAccept();
-               }
+      case 13: // expression -> Identificator, Assignment, expression
+#line 81 ".\compiler.y"
+            {
+                if(Compiler.variables.ContainsKey(ValueStack[ValueStack.Depth-3].val))
+                {
+                    CurrentSemanticValue.expresionNode = new Compiler.AssignmentExpresionNode(new Compiler.Pair(Compiler.variables[ValueStack[ValueStack.Depth-3].val],ValueStack[ValueStack.Depth-3].val), ValueStack[ValueStack.Depth-1].expresionNode);
+                }
+                else
+                {
+                    Console.WriteLine("line: error: such variable not exists");
+                }
+            }
 #line default
         break;
-      case 12: // line -> Eof
-#line 84 ".\gen_predef.y"
-               {
-               Console.WriteLine("  line {0,3}:  syntax error - unexpected symbol Eof",lineno);
-               ++Compiler.errors;
-               yyerrok();
-               YYAccept();
-               }
+      case 14: // expression -> constant
+#line 92 ".\compiler.y"
+                {
+                    CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(ValueStack[ValueStack.Depth-1].constantType);
+                }
 #line default
         break;
-      case 14: // end -> Eof
-#line 94 ".\gen_predef.y"
-               {
-               Console.WriteLine("  line {0,3}:  syntax error - unexpected symbol Eof",lineno);
-               ++Compiler.errors;
-               yyerrok();
-               YYAccept();
-               }
+      case 15: // constant -> IntNumber
+#line 97 ".\compiler.y"
+                     { CurrentSemanticValue.constantType = new Compiler.Pair(Compiler.Types.IntegerType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
-      case 15: // exp -> exp, Plus, term
-#line 103 ".\gen_predef.y"
-               { CurrentSemanticValue.type = BinaryOpGenCode(Tokens.Plus, ValueStack[ValueStack.Depth-3].type, ValueStack[ValueStack.Depth-1].type); }
+      case 16: // constant -> RealNumber
+#line 98 ".\compiler.y"
+                      { CurrentSemanticValue.constantType = new Compiler.Pair(Compiler.Types.DoubleType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
-      case 16: // exp -> exp, Minus, term
-#line 105 ".\gen_predef.y"
-               { CurrentSemanticValue.type = BinaryOpGenCode(Tokens.Minus, ValueStack[ValueStack.Depth-3].type, ValueStack[ValueStack.Depth-1].type); }
+      case 17: // constant -> Boolean
+#line 99 ".\compiler.y"
+                   { CurrentSemanticValue.constantType = new Compiler.Pair(Compiler.Types.BooleanType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
-      case 17: // exp -> term
-#line 107 ".\gen_predef.y"
-               { CurrentSemanticValue.type = ValueStack[ValueStack.Depth-1].type; }
+      case 18: // type -> Int
+#line 102 ".\compiler.y"
+                   {CurrentSemanticValue.types = Compiler.Types.IntegerType;}
 #line default
         break;
-      case 18: // term -> term, Multiplies, factor
-#line 111 ".\gen_predef.y"
-               { CurrentSemanticValue.type = BinaryOpGenCode(Tokens.Multiplies, ValueStack[ValueStack.Depth-3].type, ValueStack[ValueStack.Depth-1].type); }
+      case 19: // type -> Double
+#line 103 ".\compiler.y"
+                      {CurrentSemanticValue.types = Compiler.Types.DoubleType;}
 #line default
         break;
-      case 19: // term -> term, Divides, factor
-#line 113 ".\gen_predef.y"
-               { CurrentSemanticValue.type = BinaryOpGenCode(Tokens.Divides, ValueStack[ValueStack.Depth-3].type, ValueStack[ValueStack.Depth-1].type); }
+      case 20: // type -> Bool
+#line 104 ".\compiler.y"
+                    {CurrentSemanticValue.types = Compiler.Types.BooleanType;}
 #line default
         break;
-      case 20: // term -> factor
-#line 115 ".\gen_predef.y"
-               { CurrentSemanticValue.type = ValueStack[ValueStack.Depth-1].type; }
+      case 21: // multideclarations -> multideclarations, Identificator, Coma
+#line 108 ".\compiler.y"
+                    {
+                        if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,ValueStack[ValueStack.Depth-2].val))
+                        {
+                            Console.WriteLine("line: error: such variable name already exists");
+                        }
+                        else
+                        {
+                            ValueStack[ValueStack.Depth-3].varNames.Add(ValueStack[ValueStack.Depth-2].val);
+                            CurrentSemanticValue.varNames = ValueStack[ValueStack.Depth-3].varNames;
+                        }
+                    }
 #line default
         break;
-      case 21: // factor -> OpenPar, exp, ClosePar
-#line 119 ".\gen_predef.y"
-               { CurrentSemanticValue.type = ValueStack[ValueStack.Depth-2].type; }
-#line default
-        break;
-      case 22: // factor -> IntNumber
-#line 121 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("ldc.i4 {0}",int.Parse(ValueStack[ValueStack.Depth-1].val));
-               CurrentSemanticValue.type = 'i'; 
-               }
-#line default
-        break;
-      case 23: // factor -> RealNumber
-#line 126 ".\gen_predef.y"
-               {
-               double d = double.Parse(ValueStack[ValueStack.Depth-1].val,System.Globalization.CultureInfo.InvariantCulture) ;
-               Compiler.EmitCode(string.Format(System.Globalization.CultureInfo.InvariantCulture,"ldc.r8 {0}",d));
-               CurrentSemanticValue.type = 'r'; 
-               }
-#line default
-        break;
-      case 24: // factor -> Ident
-#line 132 ".\gen_predef.y"
-               {
-               Compiler.EmitCode("ldloc _{0}{1}", ValueStack[ValueStack.Depth-1].val[0]=='@'?'i':'r', ValueStack[ValueStack.Depth-1].val[1]);
-               CurrentSemanticValue.type = ValueStack[ValueStack.Depth-1].val[0]=='@'?'i':'r';
-               }
+      case 22: // multideclarations -> /* empty */
+#line 119 ".\compiler.y"
+                    { CurrentSemanticValue.varNames = new List<string>(); }
 #line default
         break;
     }
@@ -330,44 +288,9 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 139 ".\gen_predef.y"
-
-int lineno=1;
+#line 123 ".\compiler.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
-
-private char BinaryOpGenCode(Tokens t, char type1, char type2)
-    {
-    char type = ( type1=='i' && type2=='i' ) ? 'i' : 'r' ;
-    if ( type1!=type )
-        {
-        Compiler.EmitCode("stloc temp");
-        Compiler.EmitCode("conv.r8");
-        Compiler.EmitCode("ldloc temp");
-        }
-    if ( type2!=type )
-        Compiler.EmitCode("conv.r8");
-    switch ( t )
-        {
-        case Tokens.Plus:
-            Compiler.EmitCode("add");
-            break;
-        case Tokens.Minus:
-            Compiler.EmitCode("sub");
-            break;
-        case Tokens.Multiplies:
-            Compiler.EmitCode("mul");
-            break;
-        case Tokens.Divides:
-            Compiler.EmitCode("div");
-            break;
-        default:
-            Console.WriteLine($"  line {lineno,3}:  internal gencode error");
-            ++Compiler.errors;
-            break;
-        }
-    return type;
-    }
 #line default
 }
 }
