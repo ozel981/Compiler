@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-PIILLQS
-// DateTime: 10.06.2021 19:40:02
+// DateTime: 10.06.2021 20:12:24
 // UserName: wpodm
-// Input file <.\compiler.y - 10.06.2021 19:39:50>
+// Input file <.\compiler.y - 10.06.2021 20:12:16>
 
 // options: lines gplex
 
@@ -231,7 +231,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         break;
       case 4: // declarations -> declarations, declaration
 #line 33 ".\compiler.y"
-                                        { ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
+                                        { if(ValueStack[ValueStack.Depth-1].node != null) ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
 #line default
         break;
       case 5: // declarations -> /* empty */
@@ -247,11 +247,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
       case 7: // declaration -> type, Anon@1, multideclarations, Identificator, Semicolon
 #line 38 ".\compiler.y"
               {
-                    if(Compiler.IsIdentyficatorOccupied(ValueStack[ValueStack.Depth-5].types,ValueStack[ValueStack.Depth-2].val))
-                    {
-                        Console.WriteLine("line: error: such variable name already exists");
-                    }
-                    else
+                    if(!Compiler.IsIdentyficatorOccupied(ValueStack[ValueStack.Depth-5].types,ValueStack[ValueStack.Depth-2].val))
                     {
                         ValueStack[ValueStack.Depth-3].varNames.Add(ValueStack[ValueStack.Depth-2].val);
                         CurrentSemanticValue.node = new Compiler.DeclarationNode(ValueStack[ValueStack.Depth-5].types,ValueStack[ValueStack.Depth-3].varNames);
@@ -260,13 +256,9 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 8: // multideclarations -> multideclarations, Identificator, Coma
-#line 52 ".\compiler.y"
+#line 48 ".\compiler.y"
                     {
-                        if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,ValueStack[ValueStack.Depth-2].val))
-                        {
-                            Console.WriteLine("line: error: such variable name already exists");
-                        }
-                        else
+                        if(!Compiler.IsIdentyficatorOccupied(Compiler.actualType,ValueStack[ValueStack.Depth-2].val))
                         {
                             ValueStack[ValueStack.Depth-3].varNames.Add(ValueStack[ValueStack.Depth-2].val);
                             CurrentSemanticValue.varNames = ValueStack[ValueStack.Depth-3].varNames;
@@ -275,209 +267,209 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 9: // multideclarations -> /* empty */
-#line 63 ".\compiler.y"
+#line 55 ".\compiler.y"
                     { CurrentSemanticValue.varNames = new List<string>(); }
 #line default
         break;
       case 10: // statements -> statements, statement
-#line 66 ".\compiler.y"
+#line 58 ".\compiler.y"
                                    { ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
 #line default
         break;
       case 11: // statements -> /* empty */
-#line 67 ".\compiler.y"
+#line 59 ".\compiler.y"
               { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
 #line default
         break;
       case 12: // statement -> singleOperation, Semicolon
-#line 70 ".\compiler.y"
+#line 62 ".\compiler.y"
                                         { CurrentSemanticValue.node = new Compiler.StatementNode(ValueStack[ValueStack.Depth-2].node); }
 #line default
         break;
       case 13: // singleOperation -> expressionAssig
-#line 73 ".\compiler.y"
+#line 65 ".\compiler.y"
                                   { CurrentSemanticValue.node = new Compiler.SingleOperationNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 14: // expressionAssig -> Identificator, Assignment, expressionAssig
-#line 77 ".\compiler.y"
+#line 69 ".\compiler.y"
             {
                CurrentSemanticValue.expresionNode = new Compiler.AssignmentExpresionNode(ValueStack[ValueStack.Depth-3].val, ValueStack[ValueStack.Depth-1].expresionNode);
             }
 #line default
         break;
       case 15: // expressionAssig -> expressionLogic
-#line 80 ".\compiler.y"
+#line 72 ".\compiler.y"
                               { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 16: // expressionLogic -> expressionLogic, And, expressionRelat
-#line 83 ".\compiler.y"
+#line 75 ".\compiler.y"
                                                       { CurrentSemanticValue.expresionNode = new Compiler.AndLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 17: // expressionLogic -> expressionLogic, Or, expressionRelat
-#line 84 ".\compiler.y"
+#line 76 ".\compiler.y"
                                                      { CurrentSemanticValue.expresionNode = new Compiler.OrLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 18: // expressionLogic -> expressionRelat
-#line 85 ".\compiler.y"
+#line 77 ".\compiler.y"
                                   { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 19: // expressionRelat -> expressionRelat, Equal, expressionAddit
-#line 88 ".\compiler.y"
+#line 80 ".\compiler.y"
                                                         {  CurrentSemanticValue.expresionNode = new Compiler.EqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 20: // expressionRelat -> expressionRelat, NotEqual, expressionAddit
-#line 89 ".\compiler.y"
+#line 81 ".\compiler.y"
                                                            {  CurrentSemanticValue.expresionNode = new Compiler.NotEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 21: // expressionRelat -> expressionRelat, Greater, expressionAddit
-#line 90 ".\compiler.y"
+#line 82 ".\compiler.y"
                                                           {  CurrentSemanticValue.expresionNode = new Compiler.GreaterExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 22: // expressionRelat -> expressionRelat, GreaterEqual, expressionAddit
-#line 91 ".\compiler.y"
+#line 83 ".\compiler.y"
                                                                {  CurrentSemanticValue.expresionNode = new Compiler.GreaterEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 23: // expressionRelat -> expressionRelat, Less, expressionAddit
-#line 92 ".\compiler.y"
+#line 84 ".\compiler.y"
                                                        {  CurrentSemanticValue.expresionNode = new Compiler.LessExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 24: // expressionRelat -> expressionRelat, LessEqual, expressionAddit
-#line 93 ".\compiler.y"
+#line 85 ".\compiler.y"
                                                             {  CurrentSemanticValue.expresionNode = new Compiler.LessEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 25: // expressionRelat -> expressionAddit
-#line 94 ".\compiler.y"
+#line 86 ".\compiler.y"
                                   { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 26: // expressionAddit -> expressionAddit, Plus, expressionMulti
-#line 97 ".\compiler.y"
+#line 89 ".\compiler.y"
                                                        { CurrentSemanticValue.expresionNode = new Compiler.PlusExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 27: // expressionAddit -> expressionAddit, Minus, expressionMulti
-#line 98 ".\compiler.y"
+#line 90 ".\compiler.y"
                                                         { CurrentSemanticValue.expresionNode = new Compiler.MinusExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 28: // expressionAddit -> expressionMulti
-#line 99 ".\compiler.y"
+#line 91 ".\compiler.y"
                                   { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 29: // expressionMulti -> expressionMulti, Multiply, expressionBinar
-#line 102 ".\compiler.y"
+#line 94 ".\compiler.y"
                                                            { CurrentSemanticValue.expresionNode = new Compiler.MultiplyExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 30: // expressionMulti -> expressionMulti, Divide, expressionBinar
-#line 103 ".\compiler.y"
+#line 95 ".\compiler.y"
                                                          { CurrentSemanticValue.expresionNode = new Compiler.DivideExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 31: // expressionMulti -> expressionBinar
-#line 104 ".\compiler.y"
+#line 96 ".\compiler.y"
                                   { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 32: // expressionBinar -> expressionBinar, BinaryMultiply, expressionUnary
-#line 107 ".\compiler.y"
+#line 99 ".\compiler.y"
                                                                  { CurrentSemanticValue.expresionNode = new Compiler.BinaryMultiplyExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 33: // expressionBinar -> expressionBinar, BinarySum, expressionUnary
-#line 108 ".\compiler.y"
+#line 100 ".\compiler.y"
                                                             { CurrentSemanticValue.expresionNode = new Compiler.BinarySumExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 34: // expressionBinar -> expressionUnary
-#line 109 ".\compiler.y"
+#line 101 ".\compiler.y"
                                   { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 35: // expressionUnary -> Minus, expression
-#line 112 ".\compiler.y"
+#line 104 ".\compiler.y"
                                    { CurrentSemanticValue.expresionNode = new Compiler.UnaryMinusExpresionNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 36: // expressionUnary -> UnaryNegation, expression
-#line 113 ".\compiler.y"
+#line 105 ".\compiler.y"
                                            { CurrentSemanticValue.expresionNode = new Compiler.UnaryNegationExpresionNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 37: // expressionUnary -> LogicalNegation, expression
-#line 114 ".\compiler.y"
+#line 106 ".\compiler.y"
                                              { CurrentSemanticValue.expresionNode = new Compiler.LogicalNegationExpresionNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 38: // expressionUnary -> IntConversion, expression
-#line 115 ".\compiler.y"
+#line 107 ".\compiler.y"
                                            { CurrentSemanticValue.expresionNode = new Compiler.IntConversionExpresionNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 39: // expressionUnary -> DoubleConversion, expression
-#line 116 ".\compiler.y"
+#line 108 ".\compiler.y"
                                               { CurrentSemanticValue.expresionNode = new Compiler.DoubleConversionExpresionNode(ValueStack[ValueStack.Depth-1].expresionNode); }
 #line default
         break;
       case 40: // expressionUnary -> expression
-#line 117 ".\compiler.y"
+#line 109 ".\compiler.y"
                              { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 41: // expression -> OpenParenthesis, expressionAssig, CloseParenthesis
-#line 120 ".\compiler.y"
+#line 112 ".\compiler.y"
                                                               { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-2].expresionNode; }
 #line default
         break;
       case 42: // expression -> variable
-#line 121 ".\compiler.y"
+#line 113 ".\compiler.y"
                       { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
 #line default
         break;
       case 43: // variable -> IntNumber
-#line 124 ".\compiler.y"
+#line 116 ".\compiler.y"
                      { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
       case 44: // variable -> RealNumber
-#line 125 ".\compiler.y"
+#line 117 ".\compiler.y"
                       { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
       case 45: // variable -> Boolean
-#line 126 ".\compiler.y"
+#line 118 ".\compiler.y"
                    { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.BooleanType, ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
       case 46: // variable -> Identificator
-#line 127 ".\compiler.y"
+#line 119 ".\compiler.y"
                          { CurrentSemanticValue.expresionNode = new Compiler.VariableExpresionNode(ValueStack[ValueStack.Depth-1].val); }
 #line default
         break;
       case 47: // type -> Int
-#line 130 ".\compiler.y"
+#line 122 ".\compiler.y"
                    {CurrentSemanticValue.types = Compiler.Types.IntegerType;}
 #line default
         break;
       case 48: // type -> Double
-#line 131 ".\compiler.y"
+#line 123 ".\compiler.y"
                       {CurrentSemanticValue.types = Compiler.Types.DoubleType;}
 #line default
         break;
       case 49: // type -> Bool
-#line 132 ".\compiler.y"
+#line 124 ".\compiler.y"
                     {CurrentSemanticValue.types = Compiler.Types.BooleanType;}
 #line default
         break;
@@ -495,7 +487,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 136 ".\compiler.y"
+#line 128 ".\compiler.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
 #line default

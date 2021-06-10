@@ -30,17 +30,13 @@ start   : Program body Eof { Compiler.GenBody($2); }
 body    : OpenBlock declarations statements CloseBlock { $$ = new Compiler.BodyNode($2,$3); }
         ;
 
-declarations : declarations declaration { $1.Add($2); $$ = $1; }
+declarations : declarations declaration { if($2 != null) $1.Add($2); $$ = $1; }
              | { $$ = new List<Compiler.INode>(); }
              ;
 
 declaration : type { Compiler.actualType = $1; } multideclarations Identificator Semicolon
               {
-                    if(Compiler.IsIdentyficatorOccupied($1,$4))
-                    {
-                        Console.WriteLine("line: error: such variable name already exists");
-                    }
-                    else
+                    if(!Compiler.IsIdentyficatorOccupied($1,$4))
                     {
                         $3.Add($4);
                         $$ = new Compiler.DeclarationNode($1,$3);
@@ -50,11 +46,7 @@ declaration : type { Compiler.actualType = $1; } multideclarations Identificator
 
 multideclarations : multideclarations Identificator Coma 
                     {
-                        if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,$2))
-                        {
-                            Console.WriteLine("line: error: such variable name already exists");
-                        }
-                        else
+                        if(!Compiler.IsIdentyficatorOccupied(Compiler.actualType,$2))
                         {
                             $1.Add($2);
                             $$ = $1;
@@ -109,11 +101,11 @@ expressionBinar : expressionBinar BinaryMultiply expressionUnary { $$ = new Comp
                 | expressionUnary { $$ = $1; }
                 ;
 
-expressionUnary : Minus expression { $$ = new Compiler.UnaryMinusExpresionNode($2); }
-                | UnaryNegation expression { $$ = new Compiler.UnaryNegationExpresionNode($2); }
-                | LogicalNegation expression { $$ = new Compiler.LogicalNegationExpresionNode($2); }
-                | IntConversion expression { $$ = new Compiler.IntConversionExpresionNode($2); }
-                | DoubleConversion expression { $$ = new Compiler.DoubleConversionExpresionNode($2); }
+expressionUnary : Minus expressionUnary { $$ = new Compiler.UnaryMinusExpresionNode($2); }
+                | UnaryNegation expressionUnary { $$ = new Compiler.UnaryNegationExpresionNode($2); }
+                | LogicalNegation expressionUnary { $$ = new Compiler.LogicalNegationExpresionNode($2); }
+                | IntConversion expressionUnary { $$ = new Compiler.IntConversionExpresionNode($2); }
+                | DoubleConversion expressionUnary { $$ = new Compiler.DoubleConversionExpresionNode($2); }
                 | expression { $$ = $1; }
                 ;
 
