@@ -42,8 +42,14 @@ public class Compiler
     }
 
     public interface ICodeEmiter
-    {   
-        void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+    {
+        void EmitUnaryMinusCode(Types type, string outputRegisterNumber, string registerNumber);
+        void EmitUnaryNegationCode(Types type, string outputRegisterNumber, string registerNumber);
+        void EmitLogicalNegationCode(Types type, string outputRegisterNumber, string registerNumber);
+        void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string registerNumber);
+        void EmitBoolToIntConversionCode(string outputRegisterNumber, string registerNumber);
+        void EmitIntToDoubleConversionCode(string outputRegisterNumber, string registerNumber);
+        void EmitDoubleToIntConversionCode(string outputRegisterNumber, string registerNumber);
         void EmitBinarySumCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitDivideCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
@@ -174,6 +180,34 @@ public class Compiler
         public void EmitBinarySumCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("BinarySum");
+        }
+        public void EmitUnaryMinusCode(Types type, string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("UnaryMinus");
+        }
+        public void EmitUnaryNegationCode(Types type, string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("UnaryNegation");
+        }
+        public void EmitLogicalNegationCode(Types type, string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("LogicalNegation");
+        }
+        public void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("BinaryMultiply");
+        }
+        public void EmitBoolToIntConversionCode(string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("BoolToInt");
+        }
+        public void EmitIntToDoubleConversionCode(string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("IntToDouble");
+        }
+        public void EmitDoubleToIntConversionCode(string outputRegisterNumber, string registerNumber)
+        {
+            EmitCode("DoubleToInt");
         }
     }
 
@@ -545,8 +579,85 @@ public class Compiler
         public abstract void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
     }
 
-    #region RELATION
-    public class EqualExpresionNode : RelationExpresionNode
+    public class UnaryMinusExpresionNode : ExpresionNode
+    {
+        ExpresionNode expresionNode;
+        public UnaryMinusExpresionNode(ExpresionNode expresionNode) : base(expresionNode.Type)
+        {
+            this.expresionNode = expresionNode;
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            codeEmiter.EmitUnaryMinusCode(Type, registerName, outputRegisterNumber);
+        }
+    }
+    public class UnaryNegationExpresionNode : ExpresionNode
+    {
+        ExpresionNode expresionNode;
+        public UnaryNegationExpresionNode(ExpresionNode expresionNode) : base(expresionNode.Type)
+        {
+            this.expresionNode = expresionNode;
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            codeEmiter.EmitUnaryNegationCode(Type, registerName, outputRegisterNumber);
+        }
+    }
+    public class LogicalNegationExpresionNode : ExpresionNode
+    {
+        ExpresionNode expresionNode;
+        public LogicalNegationExpresionNode(ExpresionNode expresionNode) : base(expresionNode.Type)
+        {
+            this.expresionNode = expresionNode;
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            codeEmiter.EmitLogicalNegationCode(Type, registerName, outputRegisterNumber);
+        }
+    }
+    public class IntConversionExpresionNode : ExpresionNode
+    {
+        ExpresionNode expresionNode;
+        public IntConversionExpresionNode(ExpresionNode expresionNode) : base(expresionNode.Type)
+        {
+            this.expresionNode = expresionNode;
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            //TODO codeEmiter.
+        }
+    }
+    public class DoubleConversionExpresionNode : ExpresionNode
+    {
+        ExpresionNode expresionNode;
+        public DoubleConversionExpresionNode(ExpresionNode expresionNode) : base(expresionNode.Type)
+        {
+            this.expresionNode = expresionNode;
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            //TODO codeEmiter.
+        }
+    }
+
+
+#region RELATION
+public class EqualExpresionNode : RelationExpresionNode
     {
         public EqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }

@@ -13,13 +13,13 @@ public Compiler.INode node;
 public Compiler.ExpresionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis
 %token <val> Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
 %type <varNames> multideclarations 
 %type <node> body declaration statement singleOperation 
-%type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, expressionMulti, expressionBinar, expressionUnary variable
+%type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, expressionMulti, expressionBinar, expressionUnary, expression, variable
 %type <nodesList> declarations statements
 
 %%
@@ -109,8 +109,17 @@ expressionBinar : expressionBinar BinaryMultiply expressionUnary { $$ = new Comp
                 | expressionUnary { $$ = $1; }
                 ;
 
-expressionUnary : variable { $$ = $1; }
+expressionUnary : Minus expression { $$ = new Compiler.UnaryMinusExpresionNode($2); }
+                | UnaryNegation expression { $$ = new Compiler.UnaryNegationExpresionNode($2); }
+                | LogicalNegation expression { $$ = new Compiler.LogicalNegationExpresionNode($2); }
+                | IntConversion expression { $$ = new Compiler.IntConversionExpresionNode($2); }
+                | DoubleConversion expression { $$ = new Compiler.DoubleConversionExpresionNode($2); }
+                | expression { $$ = $1; }
                 ;
+
+expression : OpenParenthesis expressionAssig CloseParenthesis { $$ = $2; }
+           | variable { $$ = $1; }
+           ;
 
 variable : IntNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, $1); }
          | RealNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, $1); }

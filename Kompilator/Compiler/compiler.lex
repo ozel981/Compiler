@@ -32,6 +32,12 @@ Boolean             (true|false)
 "/"           { return (int)Tokens.Divide ; }
 "|"           { return (int)Tokens.BinarySum; }
 "&"           { return (int)Tokens.BinaryMultiply; }
+"~"           { return (int)Tokens.UnaryNegation; }
+"!"           { return (int)Tokens.LogicalNegation; }
+"(int)"       { return (int)Tokens.IntConversion; }
+"(double)"    { return (int)Tokens.DoubleConversion; }
+"("           { return (int)Tokens.OpenParenthesis; }
+")"           { return (int)Tokens.CloseParenthesis; }
 "\n"          { Compiler.lineNumber++; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
