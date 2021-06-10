@@ -18,8 +18,15 @@ Boolean             (true|false)
 ","           { return (int)Tokens.Coma; }
 ";"           { return (int)Tokens.Semicolon; }
 "="           { return (int)Tokens.Assignment; }
-"||"           { return (int)Tokens.Or; }
-"&&"           { return (int)Tokens.And; }
+"||"          { return (int)Tokens.Or; }
+"&&"          { return (int)Tokens.And; }
+"=="          { return (int)Tokens.Equal; }
+"!="          { return (int)Tokens.NotEqual; }
+">"           { return (int)Tokens.Greater; }
+">="          { return (int)Tokens.GreaterEqual; }
+"<"           { return (int)Tokens.Less; }
+"<="          { return (int)Tokens.LessEqual; }
+"\n"          { Compiler.lineNumber++; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
 {Boolean}     { yylval.val=yytext; return (int)Tokens.Boolean; }

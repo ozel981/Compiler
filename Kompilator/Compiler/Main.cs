@@ -20,6 +20,14 @@ public class Compiler
     public static List<string> source;
     public static Types actualType;
     public static int registersCount = 0;
+    public static int labelsCount = 0;
+    public static int lineNumber = 0;
+
+    public static bool CanConvertTypes(Types from, Types to)
+    {
+        if (from == Types.IntegerType && to == Types.DoubleType) return true;
+        return from == to;
+    }
 
     public struct Pair
     {
@@ -35,12 +43,19 @@ public class Compiler
 
     public interface ICodeEmiter
     {
+        void EmitEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitNotEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitGreaterCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitGreaterEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitLessCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitLessEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitBodyCode();
+        void EmitVariableCode(Pair variable, string outputRegisterNumber);
         void EmitDeclarationCode(Types type, string variableName);
-        void EmitAndLogicalExpresionCode();
-        void EmitOrLogicalExpresionCode();
-        void EmitConstantExprestionCode(Pair constant, string resultRegisterName);
-        void EmitAssignmentExpresionCode(Pair variable, string registerName, string resultRegisterName);
+        void EmitAndLogicalExpresionCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitOrLogicalExpresionCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber);
+        void EmitAssignmentExpresionCode(Pair variable, string outputRegisterNumber, string rvalueRegisterNumber);
     }
 
     public static string GetTypeString(Types type)
@@ -56,16 +71,11 @@ public class Compiler
 
     public class LLVMCodeEmiter : ICodeEmiter
     {
-        public void EmitAndLogicalExpresionCode()
-        {
-            EmitCode("TODO: emit AND code");
-        }
-
-        public void EmitAssignmentExpresionCode(Pair variable, string registerNumber, string resultRegisterNumber)
+        public void EmitAssignmentExpresionCode(Pair variable, string outputRegisterNumber, string rvalueRegisterNumber)
         {
             string typeString = GetTypeString(variable.Type);
-            EmitCode($"store {typeString} %tmp{registerNumber}, {typeString}* %{variable.Value}");
-            EmitCode($"%tmp{registerNumber} = load {typeString}* %tmp{resultRegisterNumber}");
+            EmitCode($"store {typeString} %tmp{rvalueRegisterNumber}, {typeString}* %{variable.Value}");
+            EmitCode($"%tmp{outputRegisterNumber} = load {typeString}* %tmp{rvalueRegisterNumber}");           
         }
 
         public void EmitBodyCode()
@@ -73,10 +83,10 @@ public class Compiler
             
         }
 
-        public void EmitConstantExprestionCode(Pair constant, string resultRegisterNumber)
+        public void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber)
         {
             string typeString = GetTypeString(constant.Type);
-            EmitCode($"%tmp{resultRegisterNumber} = add {typeString} 0, {constant.Value}");
+            EmitCode($"%tmp{outputRegisterNumber} = add {typeString} 0, {constant.Value}");
         }
 
         public void EmitDeclarationCode(Types type, string variableName)
@@ -84,10 +94,70 @@ public class Compiler
             string typeString = GetTypeString(type);
             EmitCode($"%{variableName} = alloca {typeString}");
         }
-
-        public void EmitOrLogicalExpresionCode()
+        public void EmitAndLogicalExpresionCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
-            EmitCode("TODO: emit OR code");
+            string endLabelName = $"End{labelsCount++}";
+            string leftLabelName = $"Left{labelsCount++}";
+            string rightLabelName = $"Right{labelsCount++}";
+            EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 0");
+            EmitCode($"br i1 %tmp{leftRegisterNumber}, label %{leftLabelName}, label %{endLabelName}");
+            EmitCode($"{leftLabelName}:");
+            EmitCode($"br i1 %tmp{rightRegisterNumber}, label %{rightLabelName}, label %{endLabelName}");
+            EmitCode($"{rightLabelName}:");
+            EmitCode($"%tmp{outputRegisterNumber} = and i1 %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            EmitCode($"br label %{endLabelName}:");
+            EmitCode($"{endLabelName}:");
+        }
+
+        public void EmitOrLogicalExpresionCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            string endLabelName = $"End{labelsCount++}";
+            string leftLabelName = $"Left{labelsCount++}";
+            string rightLabelName = $"Right{labelsCount++}";
+            EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 1");
+            EmitCode($"br i1 %tmp{leftRegisterNumber}, label %{endLabelName}, label %{leftLabelName}");
+            EmitCode($"{leftLabelName}:");
+            EmitCode($"br i1 %tmp{rightRegisterNumber}, label %{endLabelName}, label %{rightLabelName}");
+            EmitCode($"{rightLabelName}:");
+            EmitCode($"%tmp{outputRegisterNumber} = or i1 %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            EmitCode($"br label %{endLabelName}:");
+            EmitCode($"{endLabelName}:");
+        }
+
+        public void EmitVariableCode(Pair variable, string outputRegisterNumber)
+        {
+            string typeString = GetTypeString(variable.Type);
+            EmitCode($"%tmp{outputRegisterNumber} = load {typeString}* %{variable.Value}");
+        }
+
+        public void EmitEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Equal");
+        }
+
+        public void EmitNotEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("NotEqual");
+        }
+
+        public void EmitGreaterCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Greater");
+        }
+
+        public void EmitGreaterEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("GreaterEqual");
+        }
+
+        public void EmitLessCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Less");
+        }
+
+        public void EmitLessEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("LessEqual");
         }
     }
 
@@ -172,9 +242,9 @@ public class Compiler
     public class ConstantExpresionNode : ExpresionNode
     {
         Pair constant;
-        public ConstantExpresionNode(Pair constant) : base(constant.Type)
+        public ConstantExpresionNode(Types type, string value) : base(type)
         {
-            this.constant = constant;
+            this.constant = new Pair(type, value);
         }
         public override void EmitCode(ICodeEmiter codeEmiter)
         {
@@ -182,9 +252,33 @@ public class Compiler
             codeEmiter.EmitConstantExprestionCode(constant, registerNumber);
         }
 
-        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerNumber)
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
         {
-            codeEmiter.EmitConstantExprestionCode(constant, registerNumber);
+            codeEmiter.EmitConstantExprestionCode(constant, outputRegisterNumber);
+        }
+    }
+
+    public class VariableExpresionNode : ExpresionNode
+    {
+        Pair variable;
+        public VariableExpresionNode(string variableName) : base(variables[variableName])
+        {
+            if (!variables.ContainsKey(variableName))
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: such variable not exists");
+                errors++;
+            }
+            this.variable = new Pair(variables[variableName], variableName);
+        }
+        public override void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string registerNumber = registersCount++.ToString();
+            EmitExpresionCode(codeEmiter, registerNumber);
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+            codeEmiter.EmitVariableCode(variable, outputRegisterNumber);
         }
     }
 
@@ -192,16 +286,152 @@ public class Compiler
     {
         protected ExpresionNode leftExpresionNode;
         protected ExpresionNode rightExpresionNode;
-        public LogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode) : base(Types.BooleanType)
+        public LogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode) 
+            : base(Types.BooleanType)
         {
             this.leftExpresionNode = leftExpresionNode;
             this.rightExpresionNode = rightExpresionNode;
+            if (leftExpresionNode.Type == Types.BooleanType && rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not bool type");
+                errors++;
+            }
         }
 
         public override void EmitCode(ICodeEmiter codeEmiter)
         {
             string registerNumber = registersCount++.ToString();
             EmitExpresionCode(codeEmiter, registerNumber);
+        }
+    }
+
+    public abstract class RelationExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        protected Types relationType;
+        public RelationExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(Types.BooleanType)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
+                errors++;
+            }
+        }
+
+        public override void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            EmitExpresionCode(codeEmiter, outputRegisterNumber);
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            EmitRelationExpresionCode(codeEmiter, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+
+        public abstract void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+    }
+
+    public class EqualExpresionNode : RelationExpresionNode
+    {
+        public EqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode) { }
+
+        public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            codeEmiter.EmitEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class NotEqualExpresionNode : RelationExpresionNode
+    {
+        public NotEqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode) { }
+
+        public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            codeEmiter.EmitNotEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class GreaterExpresionNode : RelationExpresionNode
+    {
+        public GreaterExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode)
+        {
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: one of type is bool type");
+                errors++;
+            }
+        }
+
+        public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            codeEmiter.EmitGreaterCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class GreaterEqualExpresionNode : RelationExpresionNode
+    {
+        public GreaterEqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode)
+        {
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: one of type is bool type");
+                errors++;
+            }
+        }
+
+        public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            codeEmiter.EmitGreaterEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+    public class LessExpresionNode : RelationExpresionNode
+    {
+        public LessExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode)
+        {
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: one of type is bool type");
+                errors++;
+            }
+        }
+
+        public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            codeEmiter.EmitEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class LessEqualExpresionNode : RelationExpresionNode
+    {
+        public LessEqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode, rightExpresionNode)
+        {
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: one of type is bool type");
+                errors++;
+            }
+        }
+
+        public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            codeEmiter.EmitLessEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
 
@@ -210,11 +440,14 @@ public class Compiler
         public AndLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
-        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerNumber)
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
         {
-            codeEmiter.EmitAndLogicalExpresionCode();
-            rightExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
-            leftExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
+
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitAndLogicalExpresionCode(outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
 
@@ -223,11 +456,13 @@ public class Compiler
         public OrLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
-        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerNumber)
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
         {
-            codeEmiter.EmitOrLogicalExpresionCode();
-            rightExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
-            leftExpresionNode.EmitExpresionCode(codeEmiter, registerNumber);
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitOrLogicalExpresionCode(outputRegisterNumber, leftRegisterNumber, rightRegisterNumber); ;
         }
     }
 
@@ -235,10 +470,20 @@ public class Compiler
     {
         ExpresionNode expresionNode;
         Pair variable;
-        public AssignmentExpresionNode(Pair variable, ExpresionNode expresionNode) : base(variable.Type)
+        public AssignmentExpresionNode(string variableName, ExpresionNode expresionNode) : base(variables[variableName])
         {
             this.expresionNode = expresionNode;
-            this.variable = variable;
+            if(!variables.ContainsKey(variableName))
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: such variable not exists");
+                errors++;
+            }
+            this.variable = new Pair(variables[variableName], variableName);
+            if (!CanConvertTypes(expresionNode.Type, variable.Type))
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types not match");
+                errors++;
+            }          
         }
 
         public override void EmitCode(ICodeEmiter codeEmiter)
@@ -247,11 +492,11 @@ public class Compiler
             EmitExpresionCode(codeEmiter, registerNumber);
         }
 
-        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerNumber)
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
         {
-            string newRegisterNumber = registersCount++.ToString();
-            expresionNode.EmitExpresionCode(codeEmiter, newRegisterNumber);
-            codeEmiter.EmitAssignmentExpresionCode(variable, registerNumber, newRegisterNumber);
+            string rvalueRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, rvalueRegisterNumber);
+            codeEmiter.EmitAssignmentExpresionCode(variable, outputRegisterNumber, rvalueRegisterNumber);
         }
     }
 

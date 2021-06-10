@@ -10,18 +10,16 @@ public List<Compiler.INode> nodesList;
 public string val;
 public Compiler.Types types;
 public Compiler.INode node;
-public Compiler.Pair constantType;
 public Compiler.ExpresionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual
 %token <val> Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
 %type <varNames> multideclarations 
 %type <node> body declaration statement singleOperation 
-%type <constantType> constant
-%type <expresionNode> expressionAssig, expressionLogic, expressionRelat
+%type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, variable
 %type <nodesList> declarations statements
 
 %%
@@ -62,48 +60,32 @@ singleOperation : expressionAssig { $$ = new Compiler.SingleOperationNode($1); }
 
 expressionAssig  : Identificator Assignment expressionAssig 
             {
-                if(Compiler.variables.ContainsKey($1))
-                {
-                    if(Compiler.variables[$1] == $3.Type)
-                    {
-                        $$ = new Compiler.AssignmentExpresionNode(new Compiler.Pair(Compiler.variables[$1],$1), $3);
-                    }
-                    else
-                    {
-                        Console.WriteLine("line: error: types not match");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("line: error: such variable not exists");
-                }
+               $$ = new Compiler.AssignmentExpresionNode($1, $3);
             }
             | expressionLogic { $$ = $1; }
             ;
 
-expressionLogic : expressionLogic And expressionRelat 
-                    { 
-                        if($1.Type == Compiler.Types.BooleanType && $3.Type == Compiler.Types.BooleanType)
-                             $$ = new Compiler.AndLogicalExpresionNode($1,$3); 
-                        else
-                            Console.WriteLine("line: error: types should be bool type");
-                    }
-                | expressionLogic Or expressionRelat
-                {
-                    if($1.Type == Compiler.Types.BooleanType && $3.Type == Compiler.Types.BooleanType)
-                            $$ = new Compiler.OrLogicalExpresionNode($1,$3);
-                    else
-                        Console.WriteLine("line: error: types should be bool type");
-                }
-                | constant { $$ = new Compiler.ConstantExpresionNode($1); }
+expressionLogic : expressionLogic And expressionRelat { $$ = new Compiler.AndLogicalExpresionNode($1,$3); }
+                | expressionLogic Or expressionRelat { $$ = new Compiler.OrLogicalExpresionNode($1,$3); }
+                | expressionRelat { $$ = $1; }
                 ;
 
-expressionRelat : constant { $$ = new Compiler.ConstantExpresionNode($1); }
+expressionRelat : expressionRelat Equal expressionAddit {  $$ = new Compiler.EqualExpresionNode($1, $3); }
+                | expressionRelat NotEqual expressionAddit {  $$ = new Compiler.NotEqualExpresionNode($1, $3); }
+                | expressionRelat Greater expressionAddit {  $$ = new Compiler.GreaterExpresionNode($1, $3); }
+                | expressionRelat GreaterEqual expressionAddit {  $$ = new Compiler.GreaterEqualExpresionNode($1, $3); }
+                | expressionRelat Less expressionAddit {  $$ = new Compiler.LessExpresionNode($1, $3); }
+                | expressionRelat LessEqual expressionAddit {  $$ = new Compiler.LessEqualExpresionNode($1, $3); }
+                | expressionAddit { $$ = $1; }
                 ;
 
-constant : IntNumber { $$ = new Compiler.Pair(Compiler.Types.IntegerType, $1); }
-         | RealNumber { $$ = new Compiler.Pair(Compiler.Types.DoubleType, $1); }
-         | Boolean { $$ = new Compiler.Pair(Compiler.Types.BooleanType, $1); }
+expressionAddit : variable { $$ = $1; }
+                ;
+
+variable : IntNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, $1); }
+         | RealNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, $1); }
+         | Boolean { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.BooleanType, $1); }
+         | Identificator { $$ = new Compiler.VariableExpresionNode($1); }
          ;
 
 type         : Int {$$ = Compiler.Types.IntegerType;}
