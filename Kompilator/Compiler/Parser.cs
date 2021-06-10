@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-PIILLQS
-// DateTime: 10.06.2021 16:24:44
+// DateTime: 10.06.2021 18:08:31
 // UserName: wpodm
-// Input file <.\compiler.y - 10.06.2021 16:24:38>
+// Input file <.\compiler.y - 10.06.2021 18:02:10>
 
 // options: lines gplex
 
@@ -22,8 +22,8 @@ namespace GardensPoint
 public enum Tokens {error=2,EOF=3,Program=4,OpenBlock=5,Eof=6,
     CloseBlock=7,Int=8,Bool=9,Double=10,Coma=11,Semicolon=12,
     Assignment=13,And=14,Or=15,Equal=16,NotEqual=17,Greater=18,
-    GreaterEqual=19,Less=20,LessEqual=21,Identificator=22,IntNumber=23,RealNumber=24,
-    Boolean=25};
+    GreaterEqual=19,Less=20,LessEqual=21,Plus=22,Minus=23,Multiply=24,
+    Divide=25,Identificator=26,IntNumber=27,RealNumber=28,Boolean=29};
 
 public struct ValueType
 #line 7 ".\compiler.y"
@@ -61,102 +61,118 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #pragma warning disable 649
   private static Dictionary<int, string> aliases;
 #pragma warning restore 649
-  private static Rule[] rules = new Rule[34];
-  private static State[] states = new State[51];
+  private static Rule[] rules = new Rule[40];
+  private static State[] states = new State[61];
   private static string[] nonTerms = new string[] {
       "type", "multideclarations", "body", "declaration", "statement", "singleOperation", 
       "expressionAssig", "expressionLogic", "expressionRelat", "expressionAddit", 
-      "variable", "declarations", "statements", "start", "$accept", "Anon@1", 
-      };
+      "expressionMulti", "expressionBinar", "variable", "declarations", "statements", 
+      "start", "$accept", "Anon@1", };
 
   static Parser() {
-    states[0] = new State(new int[]{4,3},new int[]{-14,1});
+    states[0] = new State(new int[]{4,3},new int[]{-16,1});
     states[1] = new State(new int[]{3,2});
     states[2] = new State(-1);
     states[3] = new State(new int[]{5,6},new int[]{-3,4});
     states[4] = new State(new int[]{6,5});
     states[5] = new State(-2);
-    states[6] = new State(-5,new int[]{-12,7});
-    states[7] = new State(new int[]{8,48,10,49,9,50,7,-9,22,-9,23,-9,24,-9,25,-9},new int[]{-13,8,-4,41,-1,42});
-    states[8] = new State(new int[]{7,9,22,14,23,23,24,24,25,25},new int[]{-5,10,-6,11,-7,13,-8,17,-9,40,-10,37,-11,22});
+    states[6] = new State(-5,new int[]{-14,7});
+    states[7] = new State(new int[]{8,58,10,59,9,60,7,-11,26,-11,27,-11,28,-11,29,-11},new int[]{-15,8,-4,51,-1,52});
+    states[8] = new State(new int[]{7,9,26,14,27,27,28,28,29,29},new int[]{-5,10,-6,11,-7,13,-8,17,-9,50,-10,47,-11,36,-12,33,-13,26});
     states[9] = new State(-3);
-    states[10] = new State(-8);
+    states[10] = new State(-10);
     states[11] = new State(new int[]{12,12});
-    states[12] = new State(-10);
-    states[13] = new State(-11);
-    states[14] = new State(new int[]{13,15,16,-28,17,-28,18,-28,19,-28,20,-28,21,-28,14,-28,15,-28,12,-28});
-    states[15] = new State(new int[]{22,14,23,23,24,24,25,25},new int[]{-7,16,-8,17,-9,40,-10,37,-11,22});
-    states[16] = new State(-12);
-    states[17] = new State(new int[]{14,18,15,38,12,-13});
-    states[18] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-9,19,-10,37,-11,22});
-    states[19] = new State(new int[]{16,20,17,27,18,29,19,31,20,33,21,35,14,-14,15,-14,12,-14});
-    states[20] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-10,21,-11,22});
-    states[21] = new State(-17);
-    states[22] = new State(-24);
-    states[23] = new State(-25);
-    states[24] = new State(-26);
-    states[25] = new State(-27);
-    states[26] = new State(-28);
-    states[27] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-10,28,-11,22});
-    states[28] = new State(-18);
-    states[29] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-10,30,-11,22});
-    states[30] = new State(-19);
-    states[31] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-10,32,-11,22});
-    states[32] = new State(-20);
-    states[33] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-10,34,-11,22});
-    states[34] = new State(-21);
-    states[35] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-10,36,-11,22});
-    states[36] = new State(-22);
-    states[37] = new State(-23);
-    states[38] = new State(new int[]{23,23,24,24,25,25,22,26},new int[]{-9,39,-10,37,-11,22});
-    states[39] = new State(new int[]{16,20,17,27,18,29,19,31,20,33,21,35,14,-15,15,-15,12,-15});
-    states[40] = new State(new int[]{16,20,17,27,18,29,19,31,20,33,21,35,14,-16,15,-16,12,-16});
-    states[41] = new State(-4);
-    states[42] = new State(-6,new int[]{-16,43});
-    states[43] = new State(-33,new int[]{-2,44});
-    states[44] = new State(new int[]{22,45});
-    states[45] = new State(new int[]{12,46,11,47});
-    states[46] = new State(-7);
-    states[47] = new State(-32);
-    states[48] = new State(-29);
-    states[49] = new State(-30);
-    states[50] = new State(-31);
+    states[12] = new State(-12);
+    states[13] = new State(-13);
+    states[14] = new State(new int[]{13,15,24,-36,25,-36,22,-36,23,-36,16,-36,17,-36,18,-36,19,-36,20,-36,21,-36,14,-36,15,-36,12,-36});
+    states[15] = new State(new int[]{26,14,27,27,28,28,29,29},new int[]{-7,16,-8,17,-9,50,-10,47,-11,36,-12,33,-13,26});
+    states[16] = new State(-14);
+    states[17] = new State(new int[]{14,18,15,48,12,-15});
+    states[18] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-9,19,-10,47,-11,36,-12,33,-13,26});
+    states[19] = new State(new int[]{16,20,17,37,18,39,19,41,20,43,21,45,14,-16,15,-16,12,-16});
+    states[20] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-10,21,-11,36,-12,33,-13,26});
+    states[21] = new State(new int[]{22,22,23,34,16,-19,17,-19,18,-19,19,-19,20,-19,21,-19,14,-19,15,-19,12,-19});
+    states[22] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-11,23,-12,33,-13,26});
+    states[23] = new State(new int[]{24,24,25,31,22,-26,23,-26,16,-26,17,-26,18,-26,19,-26,20,-26,21,-26,14,-26,15,-26,12,-26});
+    states[24] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-12,25,-13,26});
+    states[25] = new State(-29);
+    states[26] = new State(-32);
+    states[27] = new State(-33);
+    states[28] = new State(-34);
+    states[29] = new State(-35);
+    states[30] = new State(-36);
+    states[31] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-12,32,-13,26});
+    states[32] = new State(-30);
+    states[33] = new State(-31);
+    states[34] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-11,35,-12,33,-13,26});
+    states[35] = new State(new int[]{24,24,25,31,22,-27,23,-27,16,-27,17,-27,18,-27,19,-27,20,-27,21,-27,14,-27,15,-27,12,-27});
+    states[36] = new State(new int[]{24,24,25,31,22,-28,23,-28,16,-28,17,-28,18,-28,19,-28,20,-28,21,-28,14,-28,15,-28,12,-28});
+    states[37] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-10,38,-11,36,-12,33,-13,26});
+    states[38] = new State(new int[]{22,22,23,34,16,-20,17,-20,18,-20,19,-20,20,-20,21,-20,14,-20,15,-20,12,-20});
+    states[39] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-10,40,-11,36,-12,33,-13,26});
+    states[40] = new State(new int[]{22,22,23,34,16,-21,17,-21,18,-21,19,-21,20,-21,21,-21,14,-21,15,-21,12,-21});
+    states[41] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-10,42,-11,36,-12,33,-13,26});
+    states[42] = new State(new int[]{22,22,23,34,16,-22,17,-22,18,-22,19,-22,20,-22,21,-22,14,-22,15,-22,12,-22});
+    states[43] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-10,44,-11,36,-12,33,-13,26});
+    states[44] = new State(new int[]{22,22,23,34,16,-23,17,-23,18,-23,19,-23,20,-23,21,-23,14,-23,15,-23,12,-23});
+    states[45] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-10,46,-11,36,-12,33,-13,26});
+    states[46] = new State(new int[]{22,22,23,34,16,-24,17,-24,18,-24,19,-24,20,-24,21,-24,14,-24,15,-24,12,-24});
+    states[47] = new State(new int[]{22,22,23,34,16,-25,17,-25,18,-25,19,-25,20,-25,21,-25,14,-25,15,-25,12,-25});
+    states[48] = new State(new int[]{27,27,28,28,29,29,26,30},new int[]{-9,49,-10,47,-11,36,-12,33,-13,26});
+    states[49] = new State(new int[]{16,20,17,37,18,39,19,41,20,43,21,45,14,-17,15,-17,12,-17});
+    states[50] = new State(new int[]{16,20,17,37,18,39,19,41,20,43,21,45,14,-18,15,-18,12,-18});
+    states[51] = new State(-4);
+    states[52] = new State(-6,new int[]{-18,53});
+    states[53] = new State(-9,new int[]{-2,54});
+    states[54] = new State(new int[]{26,55});
+    states[55] = new State(new int[]{12,56,11,57});
+    states[56] = new State(-7);
+    states[57] = new State(-8);
+    states[58] = new State(-37);
+    states[59] = new State(-38);
+    states[60] = new State(-39);
 
     for (int sNo = 0; sNo < states.Length; sNo++) states[sNo].number = sNo;
 
-    rules[1] = new Rule(-15, new int[]{-14,3});
-    rules[2] = new Rule(-14, new int[]{4,-3,6});
-    rules[3] = new Rule(-3, new int[]{5,-12,-13,7});
-    rules[4] = new Rule(-12, new int[]{-12,-4});
-    rules[5] = new Rule(-12, new int[]{});
-    rules[6] = new Rule(-16, new int[]{});
-    rules[7] = new Rule(-4, new int[]{-1,-16,-2,22,12});
-    rules[8] = new Rule(-13, new int[]{-13,-5});
-    rules[9] = new Rule(-13, new int[]{});
-    rules[10] = new Rule(-5, new int[]{-6,12});
-    rules[11] = new Rule(-6, new int[]{-7});
-    rules[12] = new Rule(-7, new int[]{22,13,-7});
-    rules[13] = new Rule(-7, new int[]{-8});
-    rules[14] = new Rule(-8, new int[]{-8,14,-9});
-    rules[15] = new Rule(-8, new int[]{-8,15,-9});
-    rules[16] = new Rule(-8, new int[]{-9});
-    rules[17] = new Rule(-9, new int[]{-9,16,-10});
-    rules[18] = new Rule(-9, new int[]{-9,17,-10});
-    rules[19] = new Rule(-9, new int[]{-9,18,-10});
-    rules[20] = new Rule(-9, new int[]{-9,19,-10});
-    rules[21] = new Rule(-9, new int[]{-9,20,-10});
-    rules[22] = new Rule(-9, new int[]{-9,21,-10});
-    rules[23] = new Rule(-9, new int[]{-10});
-    rules[24] = new Rule(-10, new int[]{-11});
-    rules[25] = new Rule(-11, new int[]{23});
-    rules[26] = new Rule(-11, new int[]{24});
-    rules[27] = new Rule(-11, new int[]{25});
-    rules[28] = new Rule(-11, new int[]{22});
-    rules[29] = new Rule(-1, new int[]{8});
-    rules[30] = new Rule(-1, new int[]{10});
-    rules[31] = new Rule(-1, new int[]{9});
-    rules[32] = new Rule(-2, new int[]{-2,22,11});
-    rules[33] = new Rule(-2, new int[]{});
+    rules[1] = new Rule(-17, new int[]{-16,3});
+    rules[2] = new Rule(-16, new int[]{4,-3,6});
+    rules[3] = new Rule(-3, new int[]{5,-14,-15,7});
+    rules[4] = new Rule(-14, new int[]{-14,-4});
+    rules[5] = new Rule(-14, new int[]{});
+    rules[6] = new Rule(-18, new int[]{});
+    rules[7] = new Rule(-4, new int[]{-1,-18,-2,26,12});
+    rules[8] = new Rule(-2, new int[]{-2,26,11});
+    rules[9] = new Rule(-2, new int[]{});
+    rules[10] = new Rule(-15, new int[]{-15,-5});
+    rules[11] = new Rule(-15, new int[]{});
+    rules[12] = new Rule(-5, new int[]{-6,12});
+    rules[13] = new Rule(-6, new int[]{-7});
+    rules[14] = new Rule(-7, new int[]{26,13,-7});
+    rules[15] = new Rule(-7, new int[]{-8});
+    rules[16] = new Rule(-8, new int[]{-8,14,-9});
+    rules[17] = new Rule(-8, new int[]{-8,15,-9});
+    rules[18] = new Rule(-8, new int[]{-9});
+    rules[19] = new Rule(-9, new int[]{-9,16,-10});
+    rules[20] = new Rule(-9, new int[]{-9,17,-10});
+    rules[21] = new Rule(-9, new int[]{-9,18,-10});
+    rules[22] = new Rule(-9, new int[]{-9,19,-10});
+    rules[23] = new Rule(-9, new int[]{-9,20,-10});
+    rules[24] = new Rule(-9, new int[]{-9,21,-10});
+    rules[25] = new Rule(-9, new int[]{-10});
+    rules[26] = new Rule(-10, new int[]{-10,22,-11});
+    rules[27] = new Rule(-10, new int[]{-10,23,-11});
+    rules[28] = new Rule(-10, new int[]{-11});
+    rules[29] = new Rule(-11, new int[]{-11,24,-12});
+    rules[30] = new Rule(-11, new int[]{-11,25,-12});
+    rules[31] = new Rule(-11, new int[]{-12});
+    rules[32] = new Rule(-12, new int[]{-13});
+    rules[33] = new Rule(-13, new int[]{27});
+    rules[34] = new Rule(-13, new int[]{28});
+    rules[35] = new Rule(-13, new int[]{29});
+    rules[36] = new Rule(-13, new int[]{26});
+    rules[37] = new Rule(-1, new int[]{8});
+    rules[38] = new Rule(-1, new int[]{10});
+    rules[39] = new Rule(-1, new int[]{9});
   }
 
   protected override void Initialize() {
@@ -211,130 +227,8 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
               }
 #line default
         break;
-      case 8: // statements -> statements, statement
-#line 51 ".\compiler.y"
-                                   { ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
-#line default
-        break;
-      case 9: // statements -> /* empty */
+      case 8: // multideclarations -> multideclarations, Identificator, Coma
 #line 52 ".\compiler.y"
-              { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
-#line default
-        break;
-      case 10: // statement -> singleOperation, Semicolon
-#line 55 ".\compiler.y"
-                                        { CurrentSemanticValue.node = new Compiler.StatementNode(ValueStack[ValueStack.Depth-2].node); }
-#line default
-        break;
-      case 11: // singleOperation -> expressionAssig
-#line 58 ".\compiler.y"
-                                  { CurrentSemanticValue.node = new Compiler.SingleOperationNode(ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 12: // expressionAssig -> Identificator, Assignment, expressionAssig
-#line 62 ".\compiler.y"
-            {
-               CurrentSemanticValue.expresionNode = new Compiler.AssignmentExpresionNode(ValueStack[ValueStack.Depth-3].val, ValueStack[ValueStack.Depth-1].expresionNode);
-            }
-#line default
-        break;
-      case 13: // expressionAssig -> expressionLogic
-#line 65 ".\compiler.y"
-                              { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
-#line default
-        break;
-      case 14: // expressionLogic -> expressionLogic, And, expressionRelat
-#line 68 ".\compiler.y"
-                                                      { CurrentSemanticValue.expresionNode = new Compiler.AndLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 15: // expressionLogic -> expressionLogic, Or, expressionRelat
-#line 69 ".\compiler.y"
-                                                     { CurrentSemanticValue.expresionNode = new Compiler.OrLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 16: // expressionLogic -> expressionRelat
-#line 70 ".\compiler.y"
-                                  { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
-#line default
-        break;
-      case 17: // expressionRelat -> expressionRelat, Equal, expressionAddit
-#line 73 ".\compiler.y"
-                                                        {  CurrentSemanticValue.expresionNode = new Compiler.EqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 18: // expressionRelat -> expressionRelat, NotEqual, expressionAddit
-#line 74 ".\compiler.y"
-                                                           {  CurrentSemanticValue.expresionNode = new Compiler.NotEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 19: // expressionRelat -> expressionRelat, Greater, expressionAddit
-#line 75 ".\compiler.y"
-                                                          {  CurrentSemanticValue.expresionNode = new Compiler.GreaterExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 20: // expressionRelat -> expressionRelat, GreaterEqual, expressionAddit
-#line 76 ".\compiler.y"
-                                                               {  CurrentSemanticValue.expresionNode = new Compiler.GreaterEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 21: // expressionRelat -> expressionRelat, Less, expressionAddit
-#line 77 ".\compiler.y"
-                                                       {  CurrentSemanticValue.expresionNode = new Compiler.LessExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 22: // expressionRelat -> expressionRelat, LessEqual, expressionAddit
-#line 78 ".\compiler.y"
-                                                            {  CurrentSemanticValue.expresionNode = new Compiler.LessEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
-#line default
-        break;
-      case 23: // expressionRelat -> expressionAddit
-#line 79 ".\compiler.y"
-                                  { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
-#line default
-        break;
-      case 24: // expressionAddit -> variable
-#line 82 ".\compiler.y"
-                           { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
-#line default
-        break;
-      case 25: // variable -> IntNumber
-#line 85 ".\compiler.y"
-                     { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, ValueStack[ValueStack.Depth-1].val); }
-#line default
-        break;
-      case 26: // variable -> RealNumber
-#line 86 ".\compiler.y"
-                      { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, ValueStack[ValueStack.Depth-1].val); }
-#line default
-        break;
-      case 27: // variable -> Boolean
-#line 87 ".\compiler.y"
-                   { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.BooleanType, ValueStack[ValueStack.Depth-1].val); }
-#line default
-        break;
-      case 28: // variable -> Identificator
-#line 88 ".\compiler.y"
-                         { CurrentSemanticValue.expresionNode = new Compiler.VariableExpresionNode(ValueStack[ValueStack.Depth-1].val); }
-#line default
-        break;
-      case 29: // type -> Int
-#line 91 ".\compiler.y"
-                   {CurrentSemanticValue.types = Compiler.Types.IntegerType;}
-#line default
-        break;
-      case 30: // type -> Double
-#line 92 ".\compiler.y"
-                      {CurrentSemanticValue.types = Compiler.Types.DoubleType;}
-#line default
-        break;
-      case 31: // type -> Bool
-#line 93 ".\compiler.y"
-                    {CurrentSemanticValue.types = Compiler.Types.BooleanType;}
-#line default
-        break;
-      case 32: // multideclarations -> multideclarations, Identificator, Coma
-#line 97 ".\compiler.y"
                     {
                         if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,ValueStack[ValueStack.Depth-2].val))
                         {
@@ -348,9 +242,161 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
                     }
 #line default
         break;
-      case 33: // multideclarations -> /* empty */
-#line 108 ".\compiler.y"
+      case 9: // multideclarations -> /* empty */
+#line 63 ".\compiler.y"
                     { CurrentSemanticValue.varNames = new List<string>(); }
+#line default
+        break;
+      case 10: // statements -> statements, statement
+#line 66 ".\compiler.y"
+                                   { ValueStack[ValueStack.Depth-2].nodesList.Add(ValueStack[ValueStack.Depth-1].node); CurrentSemanticValue.nodesList = ValueStack[ValueStack.Depth-2].nodesList; }
+#line default
+        break;
+      case 11: // statements -> /* empty */
+#line 67 ".\compiler.y"
+              { CurrentSemanticValue.nodesList = new List<Compiler.INode>(); }
+#line default
+        break;
+      case 12: // statement -> singleOperation, Semicolon
+#line 70 ".\compiler.y"
+                                        { CurrentSemanticValue.node = new Compiler.StatementNode(ValueStack[ValueStack.Depth-2].node); }
+#line default
+        break;
+      case 13: // singleOperation -> expressionAssig
+#line 73 ".\compiler.y"
+                                  { CurrentSemanticValue.node = new Compiler.SingleOperationNode(ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 14: // expressionAssig -> Identificator, Assignment, expressionAssig
+#line 77 ".\compiler.y"
+            {
+               CurrentSemanticValue.expresionNode = new Compiler.AssignmentExpresionNode(ValueStack[ValueStack.Depth-3].val, ValueStack[ValueStack.Depth-1].expresionNode);
+            }
+#line default
+        break;
+      case 15: // expressionAssig -> expressionLogic
+#line 80 ".\compiler.y"
+                              { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 16: // expressionLogic -> expressionLogic, And, expressionRelat
+#line 83 ".\compiler.y"
+                                                      { CurrentSemanticValue.expresionNode = new Compiler.AndLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 17: // expressionLogic -> expressionLogic, Or, expressionRelat
+#line 84 ".\compiler.y"
+                                                     { CurrentSemanticValue.expresionNode = new Compiler.OrLogicalExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 18: // expressionLogic -> expressionRelat
+#line 85 ".\compiler.y"
+                                  { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 19: // expressionRelat -> expressionRelat, Equal, expressionAddit
+#line 88 ".\compiler.y"
+                                                        {  CurrentSemanticValue.expresionNode = new Compiler.EqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 20: // expressionRelat -> expressionRelat, NotEqual, expressionAddit
+#line 89 ".\compiler.y"
+                                                           {  CurrentSemanticValue.expresionNode = new Compiler.NotEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 21: // expressionRelat -> expressionRelat, Greater, expressionAddit
+#line 90 ".\compiler.y"
+                                                          {  CurrentSemanticValue.expresionNode = new Compiler.GreaterExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 22: // expressionRelat -> expressionRelat, GreaterEqual, expressionAddit
+#line 91 ".\compiler.y"
+                                                               {  CurrentSemanticValue.expresionNode = new Compiler.GreaterEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 23: // expressionRelat -> expressionRelat, Less, expressionAddit
+#line 92 ".\compiler.y"
+                                                       {  CurrentSemanticValue.expresionNode = new Compiler.LessExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 24: // expressionRelat -> expressionRelat, LessEqual, expressionAddit
+#line 93 ".\compiler.y"
+                                                            {  CurrentSemanticValue.expresionNode = new Compiler.LessEqualExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode, ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 25: // expressionRelat -> expressionAddit
+#line 94 ".\compiler.y"
+                                  { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 26: // expressionAddit -> expressionAddit, Plus, expressionMulti
+#line 97 ".\compiler.y"
+                                                       { CurrentSemanticValue.expresionNode = new Compiler.PlusExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 27: // expressionAddit -> expressionAddit, Minus, expressionMulti
+#line 98 ".\compiler.y"
+                                                        { CurrentSemanticValue.expresionNode = new Compiler.MinusExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 28: // expressionAddit -> expressionMulti
+#line 99 ".\compiler.y"
+                                  { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 29: // expressionMulti -> expressionMulti, Multiply, expressionBinar
+#line 102 ".\compiler.y"
+                                                           { CurrentSemanticValue.expresionNode = new Compiler.MultiplyExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 30: // expressionMulti -> expressionMulti, Divide, expressionBinar
+#line 103 ".\compiler.y"
+                                                         { CurrentSemanticValue.expresionNode = new Compiler.DivideExpresionNode(ValueStack[ValueStack.Depth-3].expresionNode,ValueStack[ValueStack.Depth-1].expresionNode); }
+#line default
+        break;
+      case 31: // expressionMulti -> expressionBinar
+#line 104 ".\compiler.y"
+                                  { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 32: // expressionBinar -> variable
+#line 107 ".\compiler.y"
+                           { CurrentSemanticValue.expresionNode = ValueStack[ValueStack.Depth-1].expresionNode; }
+#line default
+        break;
+      case 33: // variable -> IntNumber
+#line 110 ".\compiler.y"
+                     { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, ValueStack[ValueStack.Depth-1].val); }
+#line default
+        break;
+      case 34: // variable -> RealNumber
+#line 111 ".\compiler.y"
+                      { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, ValueStack[ValueStack.Depth-1].val); }
+#line default
+        break;
+      case 35: // variable -> Boolean
+#line 112 ".\compiler.y"
+                   { CurrentSemanticValue.expresionNode = new Compiler.ConstantExpresionNode(Compiler.Types.BooleanType, ValueStack[ValueStack.Depth-1].val); }
+#line default
+        break;
+      case 36: // variable -> Identificator
+#line 113 ".\compiler.y"
+                         { CurrentSemanticValue.expresionNode = new Compiler.VariableExpresionNode(ValueStack[ValueStack.Depth-1].val); }
+#line default
+        break;
+      case 37: // type -> Int
+#line 116 ".\compiler.y"
+                   {CurrentSemanticValue.types = Compiler.Types.IntegerType;}
+#line default
+        break;
+      case 38: // type -> Double
+#line 117 ".\compiler.y"
+                      {CurrentSemanticValue.types = Compiler.Types.DoubleType;}
+#line default
+        break;
+      case 39: // type -> Bool
+#line 118 ".\compiler.y"
+                    {CurrentSemanticValue.types = Compiler.Types.BooleanType;}
 #line default
         break;
     }
@@ -367,7 +413,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 112 ".\compiler.y"
+#line 122 ".\compiler.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
 #line default

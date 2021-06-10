@@ -13,13 +13,13 @@ public Compiler.INode node;
 public Compiler.ExpresionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum
 %token <val> Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
 %type <varNames> multideclarations 
 %type <node> body declaration statement singleOperation 
-%type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, variable
+%type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, expressionMulti, expressionBinar, expressionUnary variable
 %type <nodesList> declarations statements
 
 %%
@@ -47,6 +47,21 @@ declaration : type { Compiler.actualType = $1; } multideclarations Identificator
                     }
               }
             ;
+
+multideclarations : multideclarations Identificator Coma 
+                    {
+                        if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,$2))
+                        {
+                            Console.WriteLine("line: error: such variable name already exists");
+                        }
+                        else
+                        {
+                            $1.Add($2);
+                            $$ = $1;
+                        }
+                    }
+                  | { $$ = new List<string>(); }
+                  ;
 
 statements  : statements statement { $1.Add($2); $$ = $1; }
             | { $$ = new List<Compiler.INode>(); }
@@ -79,7 +94,22 @@ expressionRelat : expressionRelat Equal expressionAddit {  $$ = new Compiler.Equ
                 | expressionAddit { $$ = $1; }
                 ;
 
-expressionAddit : variable { $$ = $1; }
+expressionAddit : expressionAddit Plus expressionMulti { $$ = new Compiler.PlusExpresionNode($1,$3); }
+                | expressionAddit Minus expressionMulti { $$ = new Compiler.MinusExpresionNode($1,$3); }
+                | expressionMulti { $$ = $1; }
+                ;
+
+expressionMulti : expressionMulti Multiply expressionBinar { $$ = new Compiler.MultiplyExpresionNode($1,$3); }
+                | expressionMulti Divide expressionBinar { $$ = new Compiler.DivideExpresionNode($1,$3); }
+                | expressionBinar { $$ = $1; }
+                ;
+
+expressionBinar : expressionBinar BinaryMultiply expressionUnary { $$ = new Compiler.BinaryMultiplyExpresionNode($1,$3); }
+                | expressionBinar BinarySum expressionUnary { $$ = new Compiler.BinarySumExpresionNode($1,$3); }
+                | expressionUnary { $$ = $1; }
+                ;
+
+expressionUnary : variable { $$ = $1; }
                 ;
 
 variable : IntNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, $1); }
@@ -92,21 +122,6 @@ type         : Int {$$ = Compiler.Types.IntegerType;}
              | Double {$$ = Compiler.Types.DoubleType;}
              | Bool {$$ = Compiler.Types.BooleanType;}
              ;
-
-multideclarations : multideclarations Identificator Coma 
-                    {
-                        if(Compiler.IsIdentyficatorOccupied(Compiler.actualType,$2))
-                        {
-                            Console.WriteLine("line: error: such variable name already exists");
-                        }
-                        else
-                        {
-                            $1.Add($2);
-                            $$ = $1;
-                        }
-                    }
-                  | { $$ = new List<string>(); }
-                  ;
 
 %%
 

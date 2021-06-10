@@ -42,7 +42,13 @@ public class Compiler
     }
 
     public interface ICodeEmiter
-    {
+    {   
+        void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitBinarySumCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitDivideCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitPlusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        void EmitMinusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitNotEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitGreaterCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
@@ -77,18 +83,12 @@ public class Compiler
             EmitCode($"store {typeString} %tmp{rvalueRegisterNumber}, {typeString}* %{variable.Value}");
             EmitCode($"%tmp{outputRegisterNumber} = load {typeString}* %tmp{rvalueRegisterNumber}");           
         }
-
-        public void EmitBodyCode()
-        {
-            
-        }
-
+        public void EmitBodyCode() { }
         public void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber)
         {
             string typeString = GetTypeString(constant.Type);
             EmitCode($"%tmp{outputRegisterNumber} = add {typeString} 0, {constant.Value}");
         }
-
         public void EmitDeclarationCode(Types type, string variableName)
         {
             string typeString = GetTypeString(type);
@@ -108,7 +108,6 @@ public class Compiler
             EmitCode($"br label %{endLabelName}:");
             EmitCode($"{endLabelName}:");
         }
-
         public void EmitOrLogicalExpresionCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             string endLabelName = $"End{labelsCount++}";
@@ -123,41 +122,58 @@ public class Compiler
             EmitCode($"br label %{endLabelName}:");
             EmitCode($"{endLabelName}:");
         }
-
         public void EmitVariableCode(Pair variable, string outputRegisterNumber)
         {
             string typeString = GetTypeString(variable.Type);
             EmitCode($"%tmp{outputRegisterNumber} = load {typeString}* %{variable.Value}");
         }
-
         public void EmitEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("Equal");
         }
-
         public void EmitNotEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("NotEqual");
         }
-
         public void EmitGreaterCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("Greater");
         }
-
         public void EmitGreaterEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("GreaterEqual");
         }
-
         public void EmitLessCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("Less");
         }
-
         public void EmitLessEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
             EmitCode("LessEqual");
+        }
+        public void EmitPlusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Plus");
+        }
+        public void EmitMinusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Minus");
+        }
+        public void EmitMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Multiply");
+        }
+        public void EmitDivideCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("Divide");
+        }
+        public void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("BinaryMultiply");
+        }
+        public void EmitBinarySumCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode("BinarySum");
         }
     }
 
@@ -234,7 +250,11 @@ public class Compiler
         {
             this.Type = type;
         }
-        public abstract void EmitCode(ICodeEmiter codeEmiter);
+        public virtual void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string registerNumber = registersCount++.ToString();
+            EmitExpresionCode(codeEmiter, registerNumber);
+        }
 
         public abstract void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName);
     }
@@ -245,11 +265,6 @@ public class Compiler
         public ConstantExpresionNode(Types type, string value) : base(type)
         {
             this.constant = new Pair(type, value);
-        }
-        public override void EmitCode(ICodeEmiter codeEmiter)
-        {
-            string registerNumber = registersCount++.ToString();
-            codeEmiter.EmitConstantExprestionCode(constant, registerNumber);
         }
 
         public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
@@ -270,11 +285,6 @@ public class Compiler
             }
             this.variable = new Pair(variables[variableName], variableName);
         }
-        public override void EmitCode(ICodeEmiter codeEmiter)
-        {
-            string registerNumber = registersCount++.ToString();
-            EmitExpresionCode(codeEmiter, registerNumber);
-        }
 
         public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
         {
@@ -282,26 +292,219 @@ public class Compiler
         }
     }
 
-    public abstract class LogicalExpresionNode : ExpresionNode
+    public class CastExpresionNode : ExpresionNode
+    {
+        Types fromType;
+        ExpresionNode expresionNode;
+        public CastExpresionNode(Types from, Types to, ExpresionNode expresionNode) : base(to)
+        {
+            this.fromType = from;
+            this.expresionNode = expresionNode;
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            //TODO codeEmiter.
+        }
+    }
+
+    public class PlusExpresionNode : ExpresionNode
     {
         protected ExpresionNode leftExpresionNode;
         protected ExpresionNode rightExpresionNode;
-        public LogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode) 
-            : base(Types.BooleanType)
+        protected Types relationType;
+        public PlusExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode.Type)
         {
             this.leftExpresionNode = leftExpresionNode;
             this.rightExpresionNode = rightExpresionNode;
-            if (leftExpresionNode.Type == Types.BooleanType && rightExpresionNode.Type == Types.BooleanType)
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
             {
-                Console.WriteLine($"line [{lineNumber}]: error: types are not bool type");
+                Console.WriteLine($"line [{lineNumber}]: error: can not sum bool");
+                errors++;
+            }
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
                 errors++;
             }
         }
 
-        public override void EmitCode(ICodeEmiter codeEmiter)
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
         {
-            string registerNumber = registersCount++.ToString();
-            EmitExpresionCode(codeEmiter, registerNumber);
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitPlusCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class MinusExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        protected Types relationType;
+        public MinusExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode.Type)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: can not sum bool");
+                errors++;
+            }
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
+                errors++;
+            }
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitMinusCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class DivideExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        protected Types relationType;
+        public DivideExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode.Type)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: can not sum bool");
+                errors++;
+            }
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
+                errors++;
+            }
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitDivideCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class MultiplyExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        protected Types relationType;
+        public MultiplyExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode.Type)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: can not sum bool");
+                errors++;
+            }
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
+                errors++;
+            }
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitMultiplyCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class BinarySumExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        protected Types relationType;
+        public BinarySumExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode.Type)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: can not sum bool");
+                errors++;
+            }
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
+                errors++;
+            }
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitMultiplyCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+        }
+    }
+
+    public class BinaryMultiplyExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        protected Types relationType;
+        public BinaryMultiplyExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(leftExpresionNode.Type)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            this.relationType = leftExpresionNode.Type;
+            if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: can not sum bool");
+                errors++;
+            }
+            if (leftExpresionNode.Type != rightExpresionNode.Type)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not same type");
+                errors++;
+            }
+        }
+
+        public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
+        {
+            string leftRegisterNumber = registersCount++.ToString();
+            string rightRegisterNumber = registersCount++.ToString();
+            leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
+            rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
+            codeEmiter.EmitMultiplyCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
 
@@ -342,6 +545,7 @@ public class Compiler
         public abstract void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
     }
 
+    #region RELATION
     public class EqualExpresionNode : RelationExpresionNode
     {
         public EqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
@@ -399,6 +603,7 @@ public class Compiler
             codeEmiter.EmitGreaterEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
+
     public class LessExpresionNode : RelationExpresionNode
     {
         public LessExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
@@ -434,7 +639,26 @@ public class Compiler
             codeEmiter.EmitLessEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
+    #endregion
 
+    public abstract class LogicalExpresionNode : ExpresionNode
+    {
+        protected ExpresionNode leftExpresionNode;
+        protected ExpresionNode rightExpresionNode;
+        public LogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+            : base(Types.BooleanType)
+        {
+            this.leftExpresionNode = leftExpresionNode;
+            this.rightExpresionNode = rightExpresionNode;
+            if (leftExpresionNode.Type != Types.BooleanType || rightExpresionNode.Type != Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}]: error: types are not bool type");
+                errors++;
+            }
+        }
+    }
+
+    #region LOGICAL
     public class AndLogicalExpresionNode : LogicalExpresionNode
     {
         public AndLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
@@ -465,6 +689,7 @@ public class Compiler
             codeEmiter.EmitOrLogicalExpresionCode(outputRegisterNumber, leftRegisterNumber, rightRegisterNumber); ;
         }
     }
+    #endregion
 
     public class AssignmentExpresionNode : ExpresionNode
     {
@@ -510,8 +735,6 @@ public class Compiler
         return false;
     }
 
-    // arg[0] określa plik źródłowy
-    // pozostałe argumenty są ignorowane
     public static int Main(string[] args)
     {
         string file;
