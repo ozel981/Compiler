@@ -40,6 +40,7 @@ Boolean             (true|false)
 ")"           { return (int)Tokens.CloseParenthesis; }
 "if"          { return (int)Tokens.If; }
 "else"        { return (int)Tokens.Else; }
+"while"       { return (int)Tokens.While; }
 "\n"          { Compiler.lineNumber++; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }

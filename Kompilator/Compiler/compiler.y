@@ -13,12 +13,12 @@ public Compiler.INode node;
 public Compiler.ExpresionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else While
 %token <val> Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
 %type <varNames> multideclarations 
-%type <node> body declaration statement singleOperation if
+%type <node> body declaration statement singleOperation if while block
 %type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, expressionMulti, expressionBinar, expressionUnary, expression, variable
 %type <nodesList> declarations statements
 
@@ -59,14 +59,23 @@ statements      : statements statement { $1.Add($2); $$ = $1; }
                 | { $$ = new List<Compiler.INode>(); }
                 ;
 
-statement       : singleOperation Semicolon { $$ = new Compiler.StatementNode($1); }
+statement       : singleOperation Semicolon { $$ = $1; }
                 | if { $$ = $1; }
+                | while { $$ = $1; }
+                | block { $$ = $1; }
                 ;
 
 if              : If OpenParenthesis expressionAssig CloseParenthesis statement 
                     { $$ = new Compiler.IfNode($3, $5); }
                 | If OpenParenthesis expressionAssig CloseParenthesis statement Else statement 
                     { $$ = new Compiler.IfElseNode($3, $5, $7); }
+                ;
+
+while           : While OpenParenthesis expressionAssig CloseParenthesis statement 
+                    { $$ = new Compiler.WhileNode($3, $5); }
+                ;
+
+block           : OpenBlock statements CloseBlock { $$ = new Compiler.BlockNode($2); }
                 ;
 
 singleOperation : expressionAssig { $$ = new Compiler.SingleOperationNode($1); }

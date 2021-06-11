@@ -63,6 +63,9 @@ public class Compiler
         void EmitBodyCode();
         void EmitIfCode(string registerNumber, string falseLabel);
         void EmitElseCode(string falseLabel);
+        void EmitWhileBeginningCode(string whileLabel);
+        void EmitWhileCode(string registerNumber, string whileLabel, string endLabel);
+        void EmitWhileEndCode(string whileLabel, string endLabel);
         #region EXPRESSIONS
         void EmitVariableCode(Pair variable, string outputRegisterNumber);
         void EmitDeclarationCode(Types type, string variableName);
@@ -129,6 +132,22 @@ public class Compiler
         {
             EmitCode($"br label %{falseLabel}:");
             EmitCode($"{falseLabel}:");
+        }
+        public void EmitWhileBeginningCode(string whileLabel)
+        {
+            EmitCode($"br label %{whileLabel}:");
+            EmitCode($"{whileLabel}:");
+        }
+        public void EmitWhileCode(string registerNumber, string whileLabel, string endLabel)
+        {
+            string doLabel = $"Do{labelsCount++}";
+            EmitCode($"br i1 %tmp{registerNumber}, label %{doLabel}, label %{endLabel}");
+            EmitCode($"{doLabel}:");
+        }
+        public void EmitWhileEndCode(string whileLabel, string endLabel)
+        {
+            EmitCode($"br label %{whileLabel}:");
+            EmitCode($"{endLabel}:");
         }
         #region EXPRESSIONS
         public void EmitVariableCode(Pair variable, string outputRegisterNumber)
@@ -377,18 +396,18 @@ public class Compiler
 
     public class BodyNode : INode
     {
-        public List<INode> declarationsNodes;
-        public List<INode> statementsNodes;
-        public BodyNode(List<INode> declarationsNodes, List<INode> statementsNodes)
+        public List<INode> declarations;
+        public List<INode> statements;
+        public BodyNode(List<INode> declarations, List<INode> statements)
         {
-            this.declarationsNodes = declarationsNodes;
-            this.statementsNodes = statementsNodes;
+            this.declarations = declarations;
+            this.statements = statements;
         }
         public void EmitCode(ICodeEmiter codeEmiter)
         {
             codeEmiter.EmitBodyCode();
-            declarationsNodes.ForEach((node) => node.EmitCode(codeEmiter));
-            statementsNodes.ForEach((node) => node.EmitCode(codeEmiter));
+            declarations.ForEach((node) => node.EmitCode(codeEmiter));
+            statements.ForEach((node) => node.EmitCode(codeEmiter));
         }
     }
 
@@ -407,19 +426,6 @@ public class Compiler
             {
                 codeEmiter.EmitDeclarationCode(declarationType, UniqueVariableName(variableName));
             }
-        }
-    }
-
-    public class StatementNode : INode
-    {
-        INode singleOperation;
-        public StatementNode(INode singleOperation)
-        {
-            this.singleOperation = singleOperation;
-        }
-        public void EmitCode(ICodeEmiter codeEmiter)
-        {
-            singleOperation.EmitCode(codeEmiter);
         }
     }
 
@@ -484,6 +490,38 @@ public class Compiler
     {
         public IfNode(ExpresionNode expresionNode, INode trueStatement) : 
             base(expresionNode, trueStatement, null) { }
+    }
+
+    public class WhileNode : INode
+    {
+        protected ExpresionNode expresionNode;
+        protected INode statement;
+        public WhileNode(ExpresionNode expresionNode, INode statement)
+        {
+            this.expresionNode = expresionNode;
+            this.statement = statement;
+            if (expresionNode.Type != Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}] error: while condition must be bool type");
+                errors++;
+            }
+        }
+        public void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            string whileLabel = $"While{labelsCount++}";
+            string endLabel = $"End{labelsCount++}";
+            codeEmiter.EmitWhileBeginningCode(whileLabel);
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            codeEmiter.EmitWhileCode(outputRegisterNumber, whileLabel, endLabel);
+            statement.EmitCode(codeEmiter);
+            codeEmiter.EmitWhileEndCode(whileLabel, endLabel);
+        }
+    }
+
+    public class BlockNode : BodyNode
+    {
+        public BlockNode(List<INode> statements) : base(new List<INode>(), statements) { }
     }
 
     #region EXPRESSIONS
