@@ -10,21 +10,21 @@ public List<Compiler.INode> nodesList;
 public string val;
 public Compiler.Types types;
 public Compiler.INode node;
-public Compiler.ExpresionNode expresionNode;
+public Compiler.ExpressionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else While
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else While Read Write Return
 %token <val> Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
 %type <varNames> multideclarations 
-%type <node> body declaration statement singleOperation if while block
+%type <node> body declaration statement singleOperation if while block read write return
 %type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, expressionMulti, expressionBinar, expressionUnary, expression, variable
 %type <nodesList> declarations statements
 
 %%
 
-start           : Program body Eof { Compiler.GenBody($2); }
+start           : Program body Eof { Compiler.GenProgram(new Compiler.ProgramNode($2)); }
                 ;
 
 body            : OpenBlock declarations statements CloseBlock { $$ = new Compiler.BodyNode($2,$3); }
@@ -78,7 +78,19 @@ while           : While OpenParenthesis expressionAssig CloseParenthesis stateme
 block           : OpenBlock statements CloseBlock { $$ = new Compiler.BlockNode($2); }
                 ;
 
-singleOperation : expressionAssig { $$ = new Compiler.SingleOperationNode($1); }
+singleOperation : expressionAssig { $$ = $1; }
+                | read { $$ = $1; }
+                | write { $$ = $1; }
+                | return { $$ = $1; }
+                ;
+
+read            : Read { $$ = new Compiler.ReturnNode(); }
+                ;
+
+write           : Write { $$ = new Compiler.ReturnNode(); }
+                ;
+
+return          : Return { $$ = new Compiler.ReturnNode(); }
                 ;
 
 expressionAssig : Identificator Assignment expressionAssig 

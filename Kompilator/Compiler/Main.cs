@@ -60,12 +60,16 @@ public class Compiler
 
     public interface ICodeEmiter
     {
-        void EmitBodyCode();
+        void EmitProgramProlog();
+        void EmitProgramEpilog();
+        void EmitReturnCode();
+        #region CONDITIONS
         void EmitIfCode(string registerNumber, string falseLabel);
         void EmitElseCode(string falseLabel);
         void EmitWhileBeginningCode(string whileLabel);
         void EmitWhileCode(string registerNumber, string whileLabel, string endLabel);
         void EmitWhileEndCode(string whileLabel, string endLabel);
+        #endregion
         #region EXPRESSIONS
         void EmitVariableCode(Pair variable, string outputRegisterNumber);
         void EmitDeclarationCode(Types type, string variableName);
@@ -121,7 +125,21 @@ public class Compiler
 
     public class LLVMCodeEmiter : ICodeEmiter
     {
-        public void EmitBodyCode() { }
+        public void EmitProgramProlog()
+        {
+            EmitCode("define i32 @main()\n{");
+        }
+        public void EmitProgramEpilog()
+        {
+            EmitCode($"br label %END_PROGRAM");
+            EmitCode($"END_PROGRAM:");
+            EmitCode("ret i32 0\n}");
+        }
+        public void EmitReturnCode()
+        {
+            EmitCode($"br label %END_PROGRAM");
+        }
+        #region CONDITIONS
         public void EmitIfCode(string registerNumber, string falseLabel)
         {
             string trueLabel = $"IfTrue{labelsCount++}";
@@ -130,12 +148,12 @@ public class Compiler
         }
         public void EmitElseCode(string falseLabel)
         {
-            EmitCode($"br label %{falseLabel}:");
+            EmitCode($"br label %{falseLabel}");
             EmitCode($"{falseLabel}:");
         }
         public void EmitWhileBeginningCode(string whileLabel)
         {
-            EmitCode($"br label %{whileLabel}:");
+            EmitCode($"br label %{whileLabel}");
             EmitCode($"{whileLabel}:");
         }
         public void EmitWhileCode(string registerNumber, string whileLabel, string endLabel)
@@ -146,9 +164,10 @@ public class Compiler
         }
         public void EmitWhileEndCode(string whileLabel, string endLabel)
         {
-            EmitCode($"br label %{whileLabel}:");
+            EmitCode($"br label %{whileLabel}");
             EmitCode($"{endLabel}:");
         }
+        #endregion
         #region EXPRESSIONS
         public void EmitVariableCode(Pair variable, string outputRegisterNumber)
         {
@@ -350,7 +369,7 @@ public class Compiler
             EmitCode($"br i1 %tmp{rightRegisterNumber}, label %{rightLabel}, label %{endLabel}");
             EmitCode($"{rightLabel}:");
             EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 1");
-            EmitCode($"br label %{endLabel}:");
+            EmitCode($"br label %{endLabel}");
             EmitCode($"{endLabel}:");
         }
 
@@ -368,7 +387,7 @@ public class Compiler
             EmitCode($"br i1 %tmp{rightRegisterNumber}, label %{endLabel}, label %{rightLabel}");
             EmitCode($"{rightLabel}:");
             EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 0");
-            EmitCode($"br label %{endLabel}:");
+            EmitCode($"br label %{endLabel}");
             EmitCode($"{endLabel}:");
         }
 
@@ -394,6 +413,21 @@ public class Compiler
         void EmitCode(ICodeEmiter codeEmiter);
     }
 
+    public class ProgramNode : INode
+    {
+        INode body;
+        public ProgramNode(INode body)
+        {
+            this.body = body;
+        }
+        public void EmitCode(ICodeEmiter codeEmiter)
+        {
+            codeEmiter.EmitProgramProlog();
+            body.EmitCode(codeEmiter);
+            codeEmiter.EmitProgramEpilog();
+        }
+    }
+
     public class BodyNode : INode
     {
         public List<INode> declarations;
@@ -405,7 +439,6 @@ public class Compiler
         }
         public void EmitCode(ICodeEmiter codeEmiter)
         {
-            codeEmiter.EmitBodyCode();
             declarations.ForEach((node) => node.EmitCode(codeEmiter));
             statements.ForEach((node) => node.EmitCode(codeEmiter));
         }
@@ -429,41 +462,21 @@ public class Compiler
         }
     }
 
-    public class SingleOperationNode : INode
+    public class ReturnNode : INode
     {
-        INode operation;
-        public SingleOperationNode(INode operation)
-        {
-            this.operation = operation;
-        }
         public void EmitCode(ICodeEmiter codeEmiter)
         {
-            operation.EmitCode(codeEmiter);
+            codeEmiter.EmitReturnCode();
         }
     }
 
-    public abstract class ExpresionNode : INode
-    {
-        public Types Type;
-        public ExpresionNode(Types type)
-        {
-            this.Type = type;
-        }
-        public virtual void EmitCode(ICodeEmiter codeEmiter)
-        {
-            string registerNumber = registersCount++.ToString();
-            EmitExpresionCode(codeEmiter, registerNumber);
-        }
-
-        public abstract void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName);
-    }
-
+    #region CONDITIONS
     public class IfElseNode : INode
     {
-        protected ExpresionNode expresionNode;
+        protected ExpressionNode expresionNode;
         protected INode trueStatement;
         protected INode falseStatement;
-        public IfElseNode(ExpresionNode expresionNode, INode trueStatement, INode falseStatement)
+        public IfElseNode(ExpressionNode expresionNode, INode trueStatement, INode falseStatement)
         {
             this.expresionNode = expresionNode;
             this.trueStatement = trueStatement;
@@ -488,15 +501,15 @@ public class Compiler
 
     public class IfNode : IfElseNode
     {
-        public IfNode(ExpresionNode expresionNode, INode trueStatement) : 
+        public IfNode(ExpressionNode expresionNode, INode trueStatement) : 
             base(expresionNode, trueStatement, null) { }
     }
 
     public class WhileNode : INode
     {
-        protected ExpresionNode expresionNode;
+        protected ExpressionNode expresionNode;
         protected INode statement;
-        public WhileNode(ExpresionNode expresionNode, INode statement)
+        public WhileNode(ExpressionNode expresionNode, INode statement)
         {
             this.expresionNode = expresionNode;
             this.statement = statement;
@@ -518,14 +531,31 @@ public class Compiler
             codeEmiter.EmitWhileEndCode(whileLabel, endLabel);
         }
     }
+    #endregion
 
     public class BlockNode : BodyNode
     {
         public BlockNode(List<INode> statements) : base(new List<INode>(), statements) { }
     }
 
+    public abstract class ExpressionNode : INode
+    {
+        public Types Type;
+        public ExpressionNode(Types type)
+        {
+            this.Type = type;
+        }
+        public virtual void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string registerNumber = registersCount++.ToString();
+            EmitExpresionCode(codeEmiter, registerNumber);
+        }
+
+        public abstract void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName);
+    }
+
     #region EXPRESSIONS
-    public class ConstantExpresionNode : ExpresionNode
+    public class ConstantExpresionNode : ExpressionNode
     {
         Pair constant;
         public ConstantExpresionNode(Types type, string value) : base(type)
@@ -539,7 +569,7 @@ public class Compiler
         }
     }
 
-    public class VariableExpresionNode : ExpresionNode
+    public class VariableExpresionNode : ExpressionNode
     {
         Pair variable;
         public VariableExpresionNode(string variableName) : base(variables[UniqueVariableName(variableName)])
@@ -559,11 +589,11 @@ public class Compiler
         }
     }
 
-    public class CastExpresionNode : ExpresionNode
+    public class CastExpresionNode : ExpressionNode
     {
         Types fromType;
-        ExpresionNode expresionNode;
-        public CastExpresionNode(Types from, Types to, ExpresionNode expresionNode) : base(to)
+        ExpressionNode expresionNode;
+        public CastExpresionNode(Types from, Types to, ExpressionNode expresionNode) : base(to)
         {
             this.fromType = from;
             this.expresionNode = expresionNode;
@@ -615,10 +645,10 @@ public class Compiler
     }
 
     #region UNARY
-    public class UnaryMinusExpresionNode : ExpresionNode
+    public class UnaryMinusExpresionNode : ExpressionNode
     {
-        ExpresionNode expresionNode;
-        public UnaryMinusExpresionNode(ExpresionNode expresionNode) : base(expresionNode.Type)
+        ExpressionNode expresionNode;
+        public UnaryMinusExpresionNode(ExpressionNode expresionNode) : base(expresionNode.Type)
         {
             this.expresionNode = expresionNode;
             if(expresionNode.Type == Types.BooleanType)
@@ -636,10 +666,10 @@ public class Compiler
         }
     }
 
-    public class UnaryNegationExpresionNode : ExpresionNode
+    public class UnaryNegationExpresionNode : ExpressionNode
     {
-        ExpresionNode expresionNode;
-        public UnaryNegationExpresionNode(ExpresionNode expresionNode) : base(Types.IntegerType)
+        ExpressionNode expresionNode;
+        public UnaryNegationExpresionNode(ExpressionNode expresionNode) : base(Types.IntegerType)
         {
             this.expresionNode = expresionNode;
             if (expresionNode.Type != Types.IntegerType)
@@ -657,10 +687,10 @@ public class Compiler
         }
     }
 
-    public class LogicalNegationExpresionNode : ExpresionNode
+    public class LogicalNegationExpresionNode : ExpressionNode
     {
-        ExpresionNode expresionNode;
-        public LogicalNegationExpresionNode(ExpresionNode expresionNode) : base(Types.BooleanType)
+        ExpressionNode expresionNode;
+        public LogicalNegationExpresionNode(ExpressionNode expresionNode) : base(Types.BooleanType)
         {
             this.expresionNode = expresionNode;
             if (expresionNode.Type != Types.BooleanType)
@@ -678,10 +708,10 @@ public class Compiler
         }
     }
 
-    public class IntConversionExpresionNode : ExpresionNode
+    public class IntConversionExpresionNode : ExpressionNode
     {
-        ExpresionNode expresionNode;
-        public IntConversionExpresionNode(ExpresionNode expresionNode) : base(Types.IntegerType)
+        ExpressionNode expresionNode;
+        public IntConversionExpresionNode(ExpressionNode expresionNode) : base(Types.IntegerType)
         {
             this.expresionNode = new CastExpresionNode(expresionNode.Type, Types.IntegerType, expresionNode);
         }
@@ -692,10 +722,10 @@ public class Compiler
         }
     }
 
-    public class DoubleConversionExpresionNode : ExpresionNode
+    public class DoubleConversionExpresionNode : ExpressionNode
     {
-        ExpresionNode expresionNode;
-        public DoubleConversionExpresionNode(ExpresionNode expresionNode) : base(Types.DoubleType)
+        ExpressionNode expresionNode;
+        public DoubleConversionExpresionNode(ExpressionNode expresionNode) : base(Types.DoubleType)
         {
             this.expresionNode = new CastExpresionNode(expresionNode.Type, Types.DoubleType, expresionNode);
         }
@@ -707,12 +737,12 @@ public class Compiler
     }
     #endregion
 
-    public abstract class BinaryExpresionNode : ExpresionNode
+    public abstract class BinaryExpresionNode : ExpressionNode
     {
-        protected ExpresionNode leftExpresionNode;
-        protected ExpresionNode rightExpresionNode;
+        protected ExpressionNode leftExpresionNode;
+        protected ExpressionNode rightExpresionNode;
 
-        public BinaryExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public BinaryExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(Types.IntegerType) 
         {
             this.leftExpresionNode = leftExpresionNode;
@@ -740,7 +770,7 @@ public class Compiler
     public class BinarySumExpresionNode : BinaryExpresionNode
     {
 
-        public BinarySumExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public BinarySumExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitBinaryExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -751,7 +781,7 @@ public class Compiler
 
     public class BinaryMultiplyExpresionNode : BinaryExpresionNode
     {
-        public BinaryMultiplyExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public BinaryMultiplyExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitBinaryExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -761,12 +791,12 @@ public class Compiler
     }
     #endregion
 
-    public abstract class ReckoningExpresionNode : ExpresionNode
+    public abstract class ReckoningExpresionNode : ExpressionNode
     {
-        protected ExpresionNode leftExpresionNode;
-        protected ExpresionNode rightExpresionNode;
+        protected ExpressionNode leftExpresionNode;
+        protected ExpressionNode rightExpresionNode;
         protected Types reckoningnType;
-        public ReckoningExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public ReckoningExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(GetMoreOverallType(leftExpresionNode.Type, rightExpresionNode.Type))
         {
             this.leftExpresionNode = leftExpresionNode;
@@ -807,7 +837,7 @@ public class Compiler
     #region RECKONING
     public class DivideExpresionNode : ReckoningExpresionNode
     {  
-        public DivideExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public DivideExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitReckoningExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -818,7 +848,7 @@ public class Compiler
 
     public class MultiplyExpresionNode : ReckoningExpresionNode
     {
-        public MultiplyExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public MultiplyExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitReckoningExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -829,7 +859,7 @@ public class Compiler
 
     public class PlusExpresionNode : ReckoningExpresionNode
     {
-        public PlusExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public PlusExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitReckoningExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -840,7 +870,7 @@ public class Compiler
 
     public class MinusExpresionNode : ReckoningExpresionNode
     {
-        public MinusExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public MinusExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitReckoningExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -850,12 +880,12 @@ public class Compiler
     }
     #endregion
 
-    public abstract class RelationExpresionNode : ExpresionNode
+    public abstract class RelationExpresionNode : ExpressionNode
     {
-        protected ExpresionNode leftExpresionNode;
-        protected ExpresionNode rightExpresionNode;
+        protected ExpressionNode leftExpresionNode;
+        protected ExpressionNode rightExpresionNode;
         protected Types relationType;
-        public RelationExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public RelationExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(Types.BooleanType)
         {
             this.leftExpresionNode = leftExpresionNode;
@@ -901,7 +931,7 @@ public class Compiler
     #region RELATION
     public class EqualExpresionNode : RelationExpresionNode
     {
-        public EqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public EqualExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -912,7 +942,7 @@ public class Compiler
 
     public class NotEqualExpresionNode : RelationExpresionNode
     {
-        public NotEqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public NotEqualExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
@@ -923,7 +953,7 @@ public class Compiler
 
     public class GreaterExpresionNode : RelationExpresionNode
     {
-        public GreaterExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public GreaterExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode)
         {
             if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
@@ -941,7 +971,7 @@ public class Compiler
 
     public class GreaterEqualExpresionNode : RelationExpresionNode
     {
-        public GreaterEqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public GreaterEqualExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode)
         {
             if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
@@ -959,7 +989,7 @@ public class Compiler
 
     public class LessExpresionNode : RelationExpresionNode
     {
-        public LessExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public LessExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode)
         {
             if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
@@ -977,7 +1007,7 @@ public class Compiler
 
     public class LessEqualExpresionNode : RelationExpresionNode
     {
-        public LessEqualExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public LessEqualExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode)
         {
             if (leftExpresionNode.Type == Types.BooleanType || rightExpresionNode.Type == Types.BooleanType)
@@ -994,11 +1024,11 @@ public class Compiler
     }
     #endregion
 
-    public abstract class LogicalExpresionNode : ExpresionNode
+    public abstract class LogicalExpresionNode : ExpressionNode
     {
-        protected ExpresionNode leftExpresionNode;
-        protected ExpresionNode rightExpresionNode;
-        public LogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        protected ExpressionNode leftExpresionNode;
+        protected ExpressionNode rightExpresionNode;
+        public LogicalExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(Types.BooleanType)
         {
             this.leftExpresionNode = leftExpresionNode;
@@ -1014,7 +1044,7 @@ public class Compiler
     #region LOGICAL
     public class AndLogicalExpresionNode : LogicalExpresionNode
     {
-        public AndLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public AndLogicalExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
@@ -1031,7 +1061,7 @@ public class Compiler
 
     public class OrLogicalExpresionNode : LogicalExpresionNode
     {
-        public OrLogicalExpresionNode(ExpresionNode leftExpresionNode, ExpresionNode rightExpresionNode)
+        public OrLogicalExpresionNode(ExpressionNode leftExpresionNode, ExpressionNode rightExpresionNode)
             : base(leftExpresionNode, rightExpresionNode) { }
 
         public override void EmitExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber)
@@ -1047,11 +1077,11 @@ public class Compiler
     }
     #endregion
 
-    public class AssignmentExpresionNode : ExpresionNode
+    public class AssignmentExpresionNode : ExpressionNode
     {
-        ExpresionNode expresionNode;
+        ExpressionNode expresionNode;
         Pair variable;
-        public AssignmentExpresionNode(string variableName, ExpresionNode expresionNode) : base(variables[UniqueVariableName(variableName)])
+        public AssignmentExpresionNode(string variableName, ExpressionNode expresionNode) : base(variables[UniqueVariableName(variableName)])
         {
             string varName = UniqueVariableName(variableName);
             if (!variables.ContainsKey(varName))
@@ -1159,21 +1189,15 @@ public class Compiler
 
     private static StreamWriter sw;
 
-    private static void GenProlog()
-    {
-        EmitCode("define i32 @main()\n{");     
-    }
+    private static void GenProlog() { }
 
-    public static void GenBody(INode node)
+    public static void GenProgram(INode program)
     {
         LLVMCodeEmiter lLVMCodeEmiter = new LLVMCodeEmiter();
-        node.EmitCode(lLVMCodeEmiter);
+        program.EmitCode(lLVMCodeEmiter);
     }
 
-    private static void GenEpilog()
-    {
-        EmitCode("ret i32 0\n}");
-    }
+    private static void GenEpilog() { }
 
 }
 

@@ -41,6 +41,9 @@ Boolean             (true|false)
 "if"          { return (int)Tokens.If; }
 "else"        { return (int)Tokens.Else; }
 "while"       { return (int)Tokens.While; }
+"read"       { return (int)Tokens.Read; }
+"write"       { return (int)Tokens.Write; }
+"return"       { return (int)Tokens.Return; }
 "\n"          { Compiler.lineNumber++; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
