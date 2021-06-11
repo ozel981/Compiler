@@ -38,6 +38,8 @@ Boolean             (true|false)
 "(double)"    { return (int)Tokens.DoubleConversion; }
 "("           { return (int)Tokens.OpenParenthesis; }
 ")"           { return (int)Tokens.CloseParenthesis; }
+"if"          { return (int)Tokens.If; }
+"else"        { return (int)Tokens.Else; }
 "\n"          { Compiler.lineNumber++; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }

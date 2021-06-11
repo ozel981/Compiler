@@ -61,21 +61,32 @@ public class Compiler
     public interface ICodeEmiter
     {
         void EmitBodyCode();
+        void EmitIfCode(string registerNumber, string falseLabel);
+        void EmitElseCode(string falseLabel);
+        #region EXPRESSIONS
+        void EmitVariableCode(Pair variable, string outputRegisterNumber);
+        void EmitDeclarationCode(Types type, string variableName);
+        void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber);
+        #region UNARY
         void EmitUnaryMinusCode(Types type, string outputRegisterNumber, string registerNumber);
-        void EmitUnaryNegationCode(Types type, string outputRegisterNumber, string registerNumber);
-        void EmitLogicalNegationCode(Types type, string outputRegisterNumber, string registerNumber);
-        void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string registerNumber);
+        void EmitUnaryNegationCode(string outputRegisterNumber, string registerNumber);
+        void EmitLogicalNegationCode(string outputRegisterNumber, string registerNumber);
+        #endregion
+        #region COVERSIONS
         void EmitBoolToIntConversionCode(string outputRegisterNumber, string registerNumber);
         void EmitIntToDoubleConversionCode(string outputRegisterNumber, string registerNumber);
         void EmitDoubleToIntConversionCode(string outputRegisterNumber, string registerNumber);
+        #endregion
+        #region BINARY
+        void EmitBinaryMultiplyCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitBinarySumCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
+        #endregion
+        #region RECKONING
         void EmitMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitDivideCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitPlusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitMinusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
-         void EmitVariableCode(Pair variable, string outputRegisterNumber);
-        void EmitDeclarationCode(Types type, string variableName);
-        void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber);
+        #endregion
         #region RELATION
         void EmitEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
         void EmitNotEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
@@ -91,6 +102,7 @@ public class Compiler
         void EmitLeftOrLogicalExpresionCode(string outputRegisterNumber, string leftRegisterNumber, string endLabel);
         #endregion
         void EmitAssignmentExpresionCode(Pair variable, string outputRegisterNumber, string rvalueRegisterNumber);
+        #endregion
     }
 
     public static string GetTypeString(Types type)
@@ -107,73 +119,137 @@ public class Compiler
     public class LLVMCodeEmiter : ICodeEmiter
     {
         public void EmitBodyCode() { }
-        public void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber)
+        public void EmitIfCode(string registerNumber, string falseLabel)
         {
-            string typeString = GetTypeString(constant.Type);
-            EmitCode($"%tmp{outputRegisterNumber} = add {typeString} 0, {constant.Value}");
+            string trueLabel = $"IfTrue{labelsCount++}";
+            EmitCode($"br i1 %tmp{registerNumber}, label %{trueLabel}, label %{falseLabel}");
+            EmitCode($"{trueLabel}:");
+        }
+        public void EmitElseCode(string falseLabel)
+        {
+            EmitCode($"br label %{falseLabel}:");
+            EmitCode($"{falseLabel}:");
+        }
+        #region EXPRESSIONS
+        public void EmitVariableCode(Pair variable, string outputRegisterNumber)
+        {
+            string typeString = GetTypeString(variable.Type);
+            EmitCode($"%tmp{outputRegisterNumber} = load {typeString}, {typeString}* %{variable.Value}");
         }
         public void EmitDeclarationCode(Types type, string variableName)
         {
             string typeString = GetTypeString(type);
             EmitCode($"%{variableName} = alloca {typeString}");
         }
-        public void EmitVariableCode(Pair variable, string outputRegisterNumber)
+        public void EmitConstantExprestionCode(Pair constant, string outputRegisterNumber)
         {
-            string typeString = GetTypeString(variable.Type);
-            EmitCode($"%tmp{outputRegisterNumber} = load {typeString}* %{variable.Value}");
+            string typeString = GetTypeString(constant.Type);
+            if(constant.Type == Types.BooleanType)
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = add {typeString} 0, {(constant.Value == "true" ? 1 : 0)}");
+            }
+            else
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = add {typeString} 0, {constant.Value}");
+            }
         }
-        public void EmitPlusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
-        {
-            EmitCode("Plus");
-        }
-        public void EmitMinusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
-        {
-            EmitCode("Minus");
-        }
-        public void EmitMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
-        {
-            EmitCode("Multiply");
-        }
-        public void EmitDivideCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
-        {
-            EmitCode("Divide");
-        }
-        public void EmitBinaryMultiplyCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
-        {
-            EmitCode("BinaryMultiply");
-        }
-        public void EmitBinarySumCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
-        {
-            EmitCode("BinarySum");
-        }
+        #region UNARY
         public void EmitUnaryMinusCode(Types type, string outputRegisterNumber, string registerNumber)
         {
-            EmitCode("UnaryMinus");
+            string typeString = GetTypeString(type);
+            if (type == Types.DoubleType)
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = fsub {typeString} 0, %tmp{registerNumber}");
+            }
+            else
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = sub {typeString} 0, %tmp{registerNumber}");
+            }
         }
-        public void EmitUnaryNegationCode(Types type, string outputRegisterNumber, string registerNumber)
+        public void EmitUnaryNegationCode(string outputRegisterNumber, string registerNumber)
         {
-            EmitCode("UnaryNegation");
+            EmitCode($"%tmp{outputRegisterNumber} = xor i32 -1, %tmp{registerNumber}");
         }
-        public void EmitLogicalNegationCode(Types type, string outputRegisterNumber, string registerNumber)
+        public void EmitLogicalNegationCode(string outputRegisterNumber, string registerNumber)
         {
-            EmitCode("LogicalNegation");
+            EmitCode($"%tmp{outputRegisterNumber} = xor i1 1, %tmp{registerNumber}");
         }
-        public void EmitBinaryMultiplyCode(Types type, string outputRegisterNumber, string registerNumber)
-        {
-            EmitCode("BinaryMultiply");
-        }
+        #endregion
+        #region CONVERSIONS
         public void EmitBoolToIntConversionCode(string outputRegisterNumber, string registerNumber)
         {
-            EmitCode("BoolToInt");
+            EmitCode($"%tmp{outputRegisterNumber} = zext i1 %tmp{registerNumber} to i32 ");
         }
         public void EmitIntToDoubleConversionCode(string outputRegisterNumber, string registerNumber)
         {
-            EmitCode("IntToDouble");
+            EmitCode($"%tmp{outputRegisterNumber} = sitofp i32 %tmp{registerNumber} to double ");
         }
         public void EmitDoubleToIntConversionCode(string outputRegisterNumber, string registerNumber)
         {
-            EmitCode("DoubleToInt");
+            EmitCode($"%tmp{outputRegisterNumber} = fptosi double %tmp{registerNumber} to i32");
         }
+        #endregion
+        #region BINARY
+        public void EmitBinaryMultiplyCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode($"%tmp{outputRegisterNumber} = and i32 %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+        }
+        public void EmitBinarySumCode(string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            EmitCode($"%tmp{outputRegisterNumber} = or i32 %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+        }
+        #endregion
+        #region RECKONING
+        public void EmitMultiplyCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            string typeString = GetTypeString(type);
+            if (type == Types.DoubleType)
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = fmul {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+            else
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = mul {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+        }
+        public void EmitDivideCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            string typeString = GetTypeString(type);
+            if (type == Types.DoubleType)
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = fdiv  {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+            else
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = udiv {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+        }
+        public void EmitPlusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            string typeString = GetTypeString(type);
+            if (type == Types.DoubleType)
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = fadd {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+            else
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = add {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+        }
+        public void EmitMinusCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
+        {
+            string typeString = GetTypeString(type);
+            if (type == Types.DoubleType)
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = fsub {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+            else
+            {
+                EmitCode($"%tmp{outputRegisterNumber} = sub {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+            }
+        }
+
+        #endregion
         #region RELATION
         public void EmitEqualCode(Types type, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
@@ -282,7 +358,7 @@ public class Compiler
             string leftLabel = $"Left{labelsCount++}";
             EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 1");
             EmitCode($"br i1 %tmp{leftRegisterNumber}, label %{endLabel}, label %{leftLabel}");
-            EmitCode($"{endLabel}:");
+            EmitCode($"{leftLabel}:");
         }
         #endregion
         public void EmitAssignmentExpresionCode(Pair variable, string outputRegisterNumber, string rvalueRegisterNumber)
@@ -291,6 +367,7 @@ public class Compiler
             EmitCode($"store {typeString} %tmp{rvalueRegisterNumber}, {typeString}* %{variable.Value}");
             EmitCode($"%tmp{outputRegisterNumber} = load {typeString}, {typeString}* %tmp{rvalueRegisterNumber}");
         }
+        #endregion
     }
 
     public interface INode
@@ -375,6 +452,41 @@ public class Compiler
         public abstract void EmitExpresionCode(ICodeEmiter codeEmiter, string registerName);
     }
 
+    public class IfElseNode : INode
+    {
+        protected ExpresionNode expresionNode;
+        protected INode trueStatement;
+        protected INode falseStatement;
+        public IfElseNode(ExpresionNode expresionNode, INode trueStatement, INode falseStatement)
+        {
+            this.expresionNode = expresionNode;
+            this.trueStatement = trueStatement;
+            this.falseStatement = falseStatement;
+            if(expresionNode.Type != Types.BooleanType)
+            {
+                Console.WriteLine($"line [{lineNumber}] error: if condition must be bool type");
+                errors++;
+            }
+        }
+        public void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            string falseLabel = $"IfFalse{labelsCount++}";
+            expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            codeEmiter.EmitIfCode(outputRegisterNumber, falseLabel);
+            trueStatement.EmitCode(codeEmiter);
+            codeEmiter.EmitElseCode(falseLabel);
+            if (falseStatement != null) falseStatement.EmitCode(codeEmiter);
+        }
+    }
+
+    public class IfNode : IfElseNode
+    {
+        public IfNode(ExpresionNode expresionNode, INode trueStatement) : 
+            base(expresionNode, trueStatement, null) { }
+    }
+
+    #region EXPRESSIONS
     public class ConstantExpresionNode : ExpresionNode
     {
         Pair constant;
@@ -421,7 +533,7 @@ public class Compiler
             {
                 case Types.BooleanType: 
                     {
-                        if (to == Types.IntegerType)
+                        if (to == Types.DoubleType)
                         {
                             errors++;
                             Console.WriteLine($"line [{lineNumber}] error: can not conver from bool to double type");
@@ -442,7 +554,7 @@ public class Compiler
                     } break;
                 case Types.IntegerType:
                     {
-                        if (to != Types.DoubleType)
+                        if (to == Types.BooleanType)
                         {
                             errors++;
                             Console.WriteLine($"line [{lineNumber}] error: can not conver from int to bool type");
@@ -503,7 +615,7 @@ public class Compiler
         {
             string outputRegisterNumber = registersCount++.ToString();
             expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
-            codeEmiter.EmitUnaryNegationCode(Type, registerName, outputRegisterNumber);
+            codeEmiter.EmitUnaryNegationCode(registerName, outputRegisterNumber);
         }
     }
 
@@ -524,7 +636,7 @@ public class Compiler
         {
             string outputRegisterNumber = registersCount++.ToString();
             expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
-            codeEmiter.EmitLogicalNegationCode(Type, registerName, outputRegisterNumber);
+            codeEmiter.EmitLogicalNegationCode(registerName, outputRegisterNumber);
         }
     }
 
@@ -606,7 +718,7 @@ public class Compiler
 
         public override void EmitBinaryExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber)
         {
-            codeEmiter.EmitBinarySumCode(outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+            codeEmiter.EmitBinaryMultiplyCode(outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
     #endregion
@@ -648,7 +760,7 @@ public class Compiler
             string rightRegisterNumber = registersCount++.ToString();
             leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
             rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
-            EmitReckoningExpresionCode(codeEmiter, leftRegisterNumber, rightRegisterNumber, outputRegisterNumber);
+            EmitReckoningExpresionCode(codeEmiter, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
 
         public abstract void EmitReckoningExpresionCode(ICodeEmiter codeEmiter, string outputRegisterNumber, string leftRegisterNumber, string rightRegisterNumber);
@@ -938,6 +1050,7 @@ public class Compiler
             codeEmiter.EmitAssignmentExpresionCode(variable, outputRegisterNumber, rvalueRegisterNumber);
         }
     }
+    #endregion
 
     public static bool IsIdentyficatorOccupied(Types type, string identyficator)
     {

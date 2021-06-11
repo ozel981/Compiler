@@ -13,36 +13,36 @@ public Compiler.INode node;
 public Compiler.ExpresionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else
 %token <val> Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
 %type <varNames> multideclarations 
-%type <node> body declaration statement singleOperation 
+%type <node> body declaration statement singleOperation if
 %type <expresionNode> expressionAssig, expressionLogic, expressionRelat, expressionAddit, expressionMulti, expressionBinar, expressionUnary, expression, variable
 %type <nodesList> declarations statements
 
 %%
 
-start   : Program body Eof { Compiler.GenBody($2); }
-        ;
+start           : Program body Eof { Compiler.GenBody($2); }
+                ;
 
-body    : OpenBlock declarations statements CloseBlock { $$ = new Compiler.BodyNode($2,$3); }
-        ;
+body            : OpenBlock declarations statements CloseBlock { $$ = new Compiler.BodyNode($2,$3); }
+                ;
 
-declarations : declarations declaration { if($2 != null) $1.Add($2); $$ = $1; }
-             | { $$ = new List<Compiler.INode>(); }
-             ;
+declarations    : declarations declaration { if($2 != null) $1.Add($2); $$ = $1; }
+                | { $$ = new List<Compiler.INode>(); }
+                ;
 
-declaration : type { Compiler.actualType = $1; } multideclarations Identificator Semicolon
-              {
-                    if(!Compiler.IsIdentyficatorOccupied($1,$4))
-                    {
-                        $3.Add($4);
-                        $$ = new Compiler.DeclarationNode($1,$3);
-                    }
-              }
-            ;
+declaration     : type { Compiler.actualType = $1; } multideclarations Identificator Semicolon
+                  {
+                        if(!Compiler.IsIdentyficatorOccupied($1,$4))
+                        {
+                            $3.Add($4);
+                            $$ = new Compiler.DeclarationNode($1,$3);
+                        }
+                  }
+                ;
 
 multideclarations : multideclarations Identificator Coma 
                     {
@@ -52,25 +52,32 @@ multideclarations : multideclarations Identificator Coma
                             $$ = $1;
                         }
                     }
-                  | { $$ = new List<string>(); }
-                  ;
+                | { $$ = new List<string>(); }
+                ;
 
-statements  : statements statement { $1.Add($2); $$ = $1; }
-            | { $$ = new List<Compiler.INode>(); }
-            ;
+statements      : statements statement { $1.Add($2); $$ = $1; }
+                | { $$ = new List<Compiler.INode>(); }
+                ;
 
-statement   : singleOperation Semicolon { $$ = new Compiler.StatementNode($1); }
-            ;
+statement       : singleOperation Semicolon { $$ = new Compiler.StatementNode($1); }
+                | if { $$ = $1; }
+                ;
+
+if              : If OpenParenthesis expressionAssig CloseParenthesis statement 
+                    { $$ = new Compiler.IfNode($3, $5); }
+                | If OpenParenthesis expressionAssig CloseParenthesis statement Else statement 
+                    { $$ = new Compiler.IfElseNode($3, $5, $7); }
+                ;
 
 singleOperation : expressionAssig { $$ = new Compiler.SingleOperationNode($1); }
                 ;
 
-expressionAssig  : Identificator Assignment expressionAssig 
-            {
-               $$ = new Compiler.AssignmentExpresionNode($1, $3);
-            }
-            | expressionLogic { $$ = $1; }
-            ;
+expressionAssig : Identificator Assignment expressionAssig 
+                {
+                   $$ = new Compiler.AssignmentExpresionNode($1, $3);
+                }
+                | expressionLogic { $$ = $1; }
+                ;
 
 expressionLogic : expressionLogic And expressionRelat { $$ = new Compiler.AndLogicalExpresionNode($1,$3); }
                 | expressionLogic Or expressionRelat { $$ = new Compiler.OrLogicalExpresionNode($1,$3); }
@@ -109,20 +116,20 @@ expressionUnary : Minus expressionUnary { $$ = new Compiler.UnaryMinusExpresionN
                 | expression { $$ = $1; }
                 ;
 
-expression : OpenParenthesis expressionAssig CloseParenthesis { $$ = $2; }
-           | variable { $$ = $1; }
-           ;
+expression      : OpenParenthesis expressionAssig CloseParenthesis { $$ = $2; }
+                | variable { $$ = $1; }
+                ;
 
-variable : IntNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, $1); }
-         | RealNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, $1); }
-         | Boolean { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.BooleanType, $1); }
-         | Identificator { $$ = new Compiler.VariableExpresionNode($1); }
-         ;
+variable        : IntNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.IntegerType, $1); }
+                | RealNumber { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.DoubleType, $1); }
+                | Boolean { $$ = new Compiler.ConstantExpresionNode(Compiler.Types.BooleanType, $1); }
+                | Identificator { $$ = new Compiler.VariableExpresionNode($1); }
+                ;
 
-type         : Int {$$ = Compiler.Types.IntegerType;}
-             | Double {$$ = Compiler.Types.DoubleType;}
-             | Bool {$$ = Compiler.Types.BooleanType;}
-             ;
+type            : Int {$$ = Compiler.Types.IntegerType;}
+                | Double {$$ = Compiler.Types.DoubleType;}
+                | Bool {$$ = Compiler.Types.BooleanType;}
+                ;
 
 %%
 
