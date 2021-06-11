@@ -13,8 +13,8 @@ public Compiler.INode node;
 public Compiler.ExpressionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else While Read Write Return
-%token <val> Identificator IntNumber RealNumber Boolean
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else While Read Write Hex Return
+%token <val> Identificator IntNumber RealNumber Boolean String
 
 %type <types> type 
 %type <varNames> multideclarations 
@@ -84,10 +84,13 @@ singleOperation : expressionAssig { $$ = $1; }
                 | return { $$ = $1; }
                 ;
 
-read            : Read { $$ = new Compiler.ReturnNode(); }
+read            : Read Identificator { $$ = new Compiler.ReadNode($2); }
+                | Read Identificator Coma Hex { $$ = new Compiler.HexReadNode($2); }
                 ;
 
-write           : Write { $$ = new Compiler.ReturnNode(); }
+write           : Write expressionAssig { $$ = new Compiler.WriteNode($2); }
+                | Write expressionAssig Coma Hex { $$ = new Compiler.HexWriteNode($2); }
+                | Write String { $$ = new Compiler.StringWriteNode($2); }
                 ;
 
 return          : Return { $$ = new Compiler.ReturnNode(); }

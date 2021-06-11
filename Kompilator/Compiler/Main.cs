@@ -8,11 +8,9 @@ public class Compiler
 {
     public enum Types
     {
-        NoneType = -1,
         IntegerType = 0,
         DoubleType = 1,
         BooleanType = 2,
-        StringType = 3
     }
 
     public static int errors = 0;
@@ -41,7 +39,6 @@ public class Compiler
             case Types.IntegerType: return "int";
             case Types.DoubleType: return "double";
             case Types.BooleanType: return "bool";
-            case Types.StringType: return "string";
             default: return "";
         }
     }
@@ -63,6 +60,11 @@ public class Compiler
         void EmitProgramProlog();
         void EmitProgramEpilog();
         void EmitReturnCode();
+        void EmitReadCode(Types type, string variableName);
+        void EmitHexReadCode(Types type, string variableName);
+        void EmitWriteCode(Types type, string registerNumber);
+        void EmitHexWriteCode(string registerNumber);
+        void EmitStringWriteCode(string inscription);
         #region CONDITIONS
         void EmitIfCode(string registerNumber, string falseLabel);
         void EmitElseCode(string falseLabel);
@@ -138,6 +140,26 @@ public class Compiler
         public void EmitReturnCode()
         {
             EmitCode($"br label %END_PROGRAM");
+        }
+        public void EmitReadCode(Types type, string variableName)
+        {
+
+        }
+        public void EmitHexReadCode(Types type, string variableName)
+        {
+
+        }
+        public void EmitWriteCode(Types type, string registerNumber)
+        {
+
+        }
+        public void EmitHexWriteCode(string registerNumber)
+        {
+
+        }
+        public void EmitStringWriteCode(string inscription)
+        {
+
         }
         #region CONDITIONS
         public void EmitIfCode(string registerNumber, string falseLabel)
@@ -459,6 +481,98 @@ public class Compiler
             {
                 codeEmiter.EmitDeclarationCode(declarationType, UniqueVariableName(variableName));
             }
+        }
+    }
+
+    public class ReadNode : INode
+    {
+        protected Pair variable;
+        public ReadNode(string variableName)
+        {
+            string varName = UniqueVariableName(variableName);
+            if (!variables.ContainsKey(varName))
+            {
+                Console.WriteLine($"line [{lineNumber}] error: such variable not exists");
+                errors++;
+            }
+            else
+            {
+                if (variables[varName] == Types.BooleanType)
+                {
+                    Console.WriteLine($"line [{lineNumber}] error: can not read bool type");
+                    errors++;
+                }
+            }
+            this.variable = new Pair(variables[varName], varName);
+        }
+        public virtual void EmitCode(ICodeEmiter codeEmiter)
+        {
+            codeEmiter.EmitReadCode(variable.Type, variable.Value);
+        }
+    }
+
+    public class HexReadNode : ReadNode
+    {
+        public HexReadNode(string variableName) : base(variableName)
+        {
+            if (variables[UniqueVariableName(variableName)] == Types.DoubleType)
+            {
+                Console.WriteLine($"line [{lineNumber}] error: can not read hex to double type");
+                errors++;
+            }
+        }
+        public override void EmitCode(ICodeEmiter codeEmiter)
+        {
+            codeEmiter.EmitReadCode(variable.Type, variable.Value);
+        }
+    }
+
+    public class WriteNode : INode
+    {
+        protected ExpressionNode expressionNode;
+        public WriteNode(ExpressionNode expressionNode)
+        {
+            this.expressionNode = expressionNode;
+        }
+        public void EmitCode(ICodeEmiter codeEmiter)
+        {
+            string outputRegisterNumber = registersCount++.ToString();
+            expressionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+            EmitWriteCode(codeEmiter, outputRegisterNumber);
+        }
+
+        public virtual void EmitWriteCode(ICodeEmiter codeEmiter, string registerNumber)
+        {
+            codeEmiter.EmitWriteCode(expressionNode.Type, registerNumber);
+        }
+    }
+
+    public class HexWriteNode : WriteNode
+    {
+        public HexWriteNode(ExpressionNode expressionNode) : base(expressionNode)
+        {
+            if(expressionNode.Type != Types.IntegerType)
+            {
+                Console.WriteLine($"line [{lineNumber}] error: can not write {TypeName(expressionNode.Type)} as hex");
+                errors++;
+            }
+        }
+        public override void EmitWriteCode(ICodeEmiter codeEmiter, string registerNumber)
+        {
+            codeEmiter.EmitHexWriteCode(registerNumber);
+        }
+    }
+
+    public class StringWriteNode : INode
+    {
+        protected string inscription;
+        public StringWriteNode(string inscription)
+        {
+            this.inscription = inscription;
+        }
+        public void EmitCode(ICodeEmiter codeEmiter)
+        {
+            codeEmiter.EmitStringWriteCode(inscription);
         }
     }
 

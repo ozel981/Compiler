@@ -6,6 +6,7 @@ Identificator       [a-zA-Z]([a-zA-Z0-9])*
 IntNumber           ([1-9]([0-9])*)|0
 RealNumber          ([1-9]([0-9])*\.([0-9])+)|(0\.([0-9])+)
 Boolean             (true|false)
+String              \"([^\n\\"]|\\.)*\"
 
 %%
 
@@ -41,9 +42,10 @@ Boolean             (true|false)
 "if"          { return (int)Tokens.If; }
 "else"        { return (int)Tokens.Else; }
 "while"       { return (int)Tokens.While; }
-"read"       { return (int)Tokens.Read; }
+"read"        { return (int)Tokens.Read; }
 "write"       { return (int)Tokens.Write; }
-"return"       { return (int)Tokens.Return; }
+"hex"         { return (int)Tokens.Hex; }
+"return"      { return (int)Tokens.Return; }
 "\n"          { Compiler.lineNumber++; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
