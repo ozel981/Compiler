@@ -6,7 +6,7 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-PIILLQS
-//  DateTime: 11.06.2021 21:49:15
+//  DateTime: 12.06.2021 13:31:24
 //  UserName: wpodm
 //  GPLEX input file <.\compiler.lex - 11.06.2021 20:23:52>
 //  GPLEX frame file <embedded resource>

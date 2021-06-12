@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-PIILLQS
-// DateTime: 11.06.2021 21:49:14
+// DateTime: 12.06.2021 13:31:24
 // UserName: wpodm
-// Input file <.\compiler.y - 11.06.2021 21:49:06>
+// Input file <.\compiler.y - 12.06.2021 13:30:26>
 
 // options: lines gplex
 
