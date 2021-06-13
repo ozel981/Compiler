@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using GardensPoint;
+using System.Text;
 
 public class Compiler
 {
@@ -73,7 +74,7 @@ public class Compiler
         void EmitReturnCode();
         #region IOSTREAM
         void EmitReadCode(Types type, string variableName);
-        void EmitHexReadCode(Types type, string variableName);
+        void EmitHexReadCode(string variableName);
         void EmitWriteCode(Types type, int registerNumber);
         void EmitHexWriteCode(int registerNumber);
         void EmitStringWriteCode(string inscription);
@@ -131,6 +132,13 @@ public class Compiler
     {
         public void EmitProgramProlog()
         {
+            EmitCode("@IO_INT = constant [3 x i8] c\"%d\\00\"");
+            EmitCode("@IO_DOUBLE = constant [4 x i8] c\"%lf\\00\"");
+            EmitCode("@IO_HEX = constant [5 x i8] c\"0X%X\\00\"");
+            EmitCode("@TRUE = constant[5 x i8] c\"True\\00\"");
+            EmitCode("@FALSE = constant[6 x i8] c\"False\\00\"");
+            EmitCode("declare i32 @printf(i8*, ...)");
+            EmitCode("declare i32 @scanf(i8*, ...)");
             EmitCode("define i32 @main()\n{");
         }
         public void EmitProgramEpilog()
@@ -146,23 +154,79 @@ public class Compiler
         #region IOSTREAM     
         public void EmitReadCode(Types type, string variableName)
         {
-
+            if (type == Types.IntegerType)
+            {
+                EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @IO_INT to i8*), i32* %{variableName})");
+            }
+            else
+            {
+                EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([4 x i8]* @IO_DOUBLE to i8*), double* %{variableName})");
+            }
         }
-        public void EmitHexReadCode(Types type, string variableName)
+        public void EmitHexReadCode(string variableName)
         {
-
+            EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([5 x i8]* @IO_HEX to i8*), i32* %{variableName})");
         }
         public void EmitWriteCode(Types type, int registerNumber)
         {
-
+            if (type == Types.IntegerType)
+            {
+                EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([3 x i8]* @IO_INT to i8*), i32 %tmp{registerNumber})");
+            }
+            else if (type == Types.DoubleType)
+            {
+                EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([4 x i8]* @IO_DOUBLE to i8*), double %tmp{registerNumber})");
+            }
+            else
+            {
+                int labelNumber = labelsCount++;
+                EmitCode($"br i1 %tmp{registerNumber}, label %TRUE{labelNumber}, label %FALSE{labelNumber}");
+                EmitCode($"TRUE{labelNumber}:");
+                EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([5 x i8]* @TRUE to i8*))");
+                EmitCode($"br label %END{labelNumber}");
+                EmitCode($"FALSE{labelNumber}:");
+                EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([6 x i8]* @FALSE to i8*))");
+                EmitCode($"br label %END{labelNumber}");
+                EmitCode($"END{labelNumber}:");
+            }
         }
         public void EmitHexWriteCode(int registerNumber)
         {
-
+            EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([5 x i8]* @IO_HEX to i8*), i32 %tmp{registerNumber})");
         }
         public void EmitStringWriteCode(string inscription)
         {
-
+            StringBuilder stringBuilder = new StringBuilder();
+            int length = 1;
+            for(int i=1; i < inscription.Length - 1; i++)
+            {
+                if(inscription[i] == '\\' )
+                {
+                    if(i < inscription.Length - 2)
+                    {
+                        switch(inscription[i+1])
+                        {
+                            case 'n': stringBuilder.Append("\\0A"); break;
+                            case '"': stringBuilder.Append("\\22"); break;
+                            case '\\': stringBuilder.Append("\\5C"); break;
+                            default: stringBuilder.Append(inscription[i + 1]); break;
+                        }
+                        length++;
+                    }
+                    i++;
+                }
+                else
+                {
+                    stringBuilder.Append(inscription[i]);
+                    length++;
+                }
+            }
+            int registerNumber = registersCount++;
+            string insc = stringBuilder.ToString();
+            EmitCode($"%STRING{registerNumber} = alloca [{length} x i8]");
+            EmitCode($"store [{length} x i8] c\"{insc}\\00\", [{length} x i8]* %STRING{registerNumber}");
+            EmitCode($"%tmp{registerNumber} = bitcast [{length} x i8]* %STRING{registerNumber} to i8*");
+            EmitCode($"call i32 (i8*, ...) @printf(i8* %tmp{registerNumber})");
         }
         #endregion
         #region CONDITIONS
@@ -213,7 +277,7 @@ public class Compiler
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = add {typeString} 0, {constant.Value}");
+                EmitCode($"%tmp{outputRegisterNumber} = {(constant.Type == Types.DoubleType ? "fadd" : "add")} {typeString} {(constant.Type == Types.DoubleType ? "0.0" : "0")}, {constant.Value}");
             }
         }
         #region UNARY
@@ -392,14 +456,16 @@ public class Compiler
         {
             EmitCode($"br i1 %tmp{rightRegisterNumber}, label %AND{labelNumber}, label %END{labelNumber}");
             EmitCode($"AND{labelNumber}:");
-            EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 1");
+            EmitCode($"store i1 1, i1* %AND_RESULT{labelNumber}");
             EmitCode($"br label %END{labelNumber}");
             EmitCode($"END{labelNumber}:");
+            EmitCode($"%tmp{outputRegisterNumber} = load i1, i1* %AND_RESULT{labelNumber}");
         }
 
         public void EmitLeftAndLogicalExpresionCode(int outputRegisterNumber, int leftRegisterNumber, int labelNumber)
         {
-            EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 0");
+            EmitCode($"%AND_RESULT{labelNumber} = alloca i1");
+            EmitCode($"store i1 0, i1* %AND_RESULT{labelNumber}");
             EmitCode($"br i1 %tmp{leftRegisterNumber}, label %RIGHT{labelNumber}, label %END{labelNumber}");
             EmitCode($"RIGHT{labelNumber}:");
         }
@@ -408,14 +474,16 @@ public class Compiler
         {
             EmitCode($"br i1 %tmp{rightRegisterNumber}, label %END{labelNumber}, label %OR{labelNumber}");
             EmitCode($"OR{labelNumber}:");
-            EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 0");
+            EmitCode($"store i1 0, i1* %OR_RESULT{labelNumber}");
             EmitCode($"br label %END{labelNumber}");
             EmitCode($"END{labelNumber}:");
+            EmitCode($"%tmp{outputRegisterNumber} = load i1, i1* %OR_RESULT{labelNumber}");
         }
 
         public void EmitLeftOrLogicalExpresionCode(int outputRegisterNumber, int leftRegisterNumber, int labelNumber)
         {
-            EmitCode($"%tmp{outputRegisterNumber} = add i1 0, 1");
+            EmitCode($"%OR_RESULT{labelNumber} = alloca i1");
+            EmitCode($"store i1 1, i1* %OR_RESULT{labelNumber}");
             EmitCode($"br i1 %tmp{leftRegisterNumber}, label %END{labelNumber}, label %RIGHT{labelNumber}");
             EmitCode($"RIGHT{labelNumber}:");
         }
@@ -424,7 +492,7 @@ public class Compiler
         {
             string typeString = GetTypeString(variable.Type);
             EmitCode($"store {typeString} %tmp{rvalueRegisterNumber}, {typeString}* %{variable.Value}");
-            EmitCode($"%tmp{outputRegisterNumber} = load {typeString}, {typeString}* %tmp{rvalueRegisterNumber}");
+            EmitCode($"%tmp{outputRegisterNumber} = {(variable.Type == Types.DoubleType ? "fadd" : "add")} {typeString} {(variable.Type == Types.DoubleType ? "0.0" : "0")}, %tmp{rvalueRegisterNumber}");
         }
         #endregion
     }
@@ -523,7 +591,7 @@ public class Compiler
         }
         public override void EmitCode(ICodeEmiter codeEmiter)
         {
-            codeEmiter.EmitReadCode(variable.Type, variable.Value);
+            codeEmiter.EmitHexReadCode(variable.Value);
         }
     }
 
@@ -1109,7 +1177,7 @@ public class Compiler
 
         public override void EmitRelationExpresionCode(ICodeEmiter codeEmiter, int outputRegisterNumber, int leftRegisterNumber, int rightRegisterNumber)
         {
-            codeEmiter.EmitEqualCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
+            codeEmiter.EmitLessCode(relationType, outputRegisterNumber, leftRegisterNumber, rightRegisterNumber);
         }
     }
 
@@ -1161,7 +1229,7 @@ public class Compiler
             int rightRegisterNumber = registersCount++;
             int labelNumber = labelsCount++;
             leftExpresionNode.EmitExpresionCode(codeEmiter, leftRegisterNumber);
-            codeEmiter.EmitRightAndLogicalExpresionCode(outputRegisterNumber, leftRegisterNumber, labelNumber);
+            codeEmiter.EmitLeftAndLogicalExpresionCode(outputRegisterNumber, leftRegisterNumber, labelNumber);
             rightExpresionNode.EmitExpresionCode(codeEmiter, rightRegisterNumber);
             codeEmiter.EmitRightAndLogicalExpresionCode(outputRegisterNumber, rightRegisterNumber, labelNumber);
         }
@@ -1308,4 +1376,3 @@ public class Compiler
     private static void GenEpilog() { }
 
 }
-

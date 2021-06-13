@@ -2,11 +2,11 @@
 %using QUT.Gppg;
 %namespace GardensPoint
 
+String              \"([^\n\\"]|\\.)*\"
 Identificator       [a-zA-Z]([a-zA-Z0-9])*
 IntNumber           ([1-9]([0-9])*)|0
 RealNumber          ([1-9]([0-9])*\.([0-9])+)|(0\.([0-9])+)
 Boolean             (true|false)
-String              \"([^\n\\"]|\\.)*\"
 
 %%
 
@@ -47,6 +47,7 @@ String              \"([^\n\\"]|\\.)*\"
 "hex"         { return (int)Tokens.Hex; }
 "return"      { return (int)Tokens.Return; }
 "\n"          { Compiler.lineNumber++; }
+{String}      { yylval.val=yytext; return (int)Tokens.String; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
 {Boolean}     { yylval.val=yytext; return (int)Tokens.Boolean; }
