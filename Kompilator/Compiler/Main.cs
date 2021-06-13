@@ -12,6 +12,7 @@ public class Compiler
         IntegerType = 0,
         DoubleType = 1,
         BooleanType = 2,
+        Error = 3
     }
 
     public static int errors = 0;
@@ -21,6 +22,16 @@ public class Compiler
     public static int registersCount = 0;
     public static int labelsCount = 0;
     public static int lineNumber = 0;
+    public static bool isCodeEmited = false;
+
+    public static Types GetVariableType(string variableName)
+    {
+        if(variables.ContainsKey(variableName))
+        {
+            return variables[variableName];
+        }
+        return Types.Error;
+    }
 
     public static string UniqueVariableName(string name) => $"{name}VAR";
 
@@ -80,7 +91,8 @@ public class Compiler
         void EmitStringWriteCode(string inscription);
         #endregion
         #region CONDITIONS
-        void EmitIfCode(int registerNumber, int labelNumber);
+        void EmitIfElseCode(int registerNumber, int labelNumber);
+        void EmitEndIfCode(int labelNumber);
         void EmitElseCode(int labelNumber);
         void EmitWhileBeginningCode(int labelNumber);
         void EmitWhileCode(int registerNumber, int labelNumber);
@@ -230,16 +242,20 @@ public class Compiler
         }
         #endregion
         #region CONDITIONS
-        public void EmitIfCode(int registerNumber, int labelNumber)
+        public void EmitIfElseCode(int registerNumber, int labelNumber)
         {
-            string trueLabel = $"";
             EmitCode($"br i1 %tmp{registerNumber}, label %TRUE{labelNumber}, label %FALSE{labelNumber}");
             EmitCode($"TRUE{labelNumber}:");
         }
         public void EmitElseCode(int labelNumber)
         {
-            EmitCode($"br label %FALSE{labelNumber}");
+            EmitCode($"br label %END{labelNumber}");
             EmitCode($"FALSE{labelNumber}:");
+        }
+        public void EmitEndIfCode(int labelNumber)
+        {
+            EmitCode($"br label %END{labelNumber}");
+            EmitCode($"END{labelNumber}:");
         }
         public void EmitWhileBeginningCode(int labelNumber)
         {
@@ -286,7 +302,7 @@ public class Compiler
             string typeString = GetTypeString(type);
             if (type == Types.DoubleType)
             {
-                EmitCode($"%tmp{outputRegisterNumber} = fsub {typeString} 0, %tmp{registerNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = fsub {typeString} 0.0, %tmp{registerNumber}");
             }
             else
             {
@@ -348,7 +364,7 @@ public class Compiler
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = udiv {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = sdiv {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
             }
         }
         public void EmitPlusCode(Types type, int outputRegisterNumber, int leftRegisterNumber, int rightRegisterNumber)
@@ -411,7 +427,7 @@ public class Compiler
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = icmp ugt {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = icmp sgt {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
             }
         }
         public void EmitGreaterEqualCode(Types type, int outputRegisterNumber, int leftRegisterNumber, int rightRegisterNumber)
@@ -423,7 +439,7 @@ public class Compiler
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = icmp uge {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = icmp sge {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
             }
         }
         public void EmitLessCode(Types type, int outputRegisterNumber, int leftRegisterNumber, int rightRegisterNumber)
@@ -435,7 +451,7 @@ public class Compiler
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = icmp ult {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = icmp slt {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
             }
         }
         public void EmitLessEqualCode(Types type, int outputRegisterNumber, int leftRegisterNumber, int rightRegisterNumber)
@@ -447,7 +463,7 @@ public class Compiler
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = icmp ule {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = icmp sle {typeString} %tmp{leftRegisterNumber}, %tmp{rightRegisterNumber}");
             }
         }
         #endregion
@@ -571,7 +587,7 @@ public class Compiler
                     errors++;
                 }
             }
-            this.variable = new Pair(variables[varName], varName);
+            this.variable = new Pair(GetVariableType(varName), varName);
         }
         public virtual void EmitCode(ICodeEmiter codeEmiter)
         {
@@ -675,10 +691,11 @@ public class Compiler
             int outputRegisterNumber = registersCount++;
             int labelNumber = labelsCount++;
             expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
-            codeEmiter.EmitIfCode(outputRegisterNumber, labelNumber);
+            codeEmiter.EmitIfElseCode(outputRegisterNumber, labelNumber);
             trueStatement.EmitCode(codeEmiter);
             codeEmiter.EmitElseCode(labelNumber);
             if (falseStatement != null) falseStatement.EmitCode(codeEmiter);
+            codeEmiter.EmitEndIfCode(labelNumber);
         }
     }
 
@@ -754,7 +771,7 @@ public class Compiler
     public class VariableExpresionNode : ExpressionNode
     {
         Pair variable;
-        public VariableExpresionNode(string variableName) : base(variables[UniqueVariableName(variableName)])
+        public VariableExpresionNode(string variableName) : base(GetVariableType(UniqueVariableName(variableName)))
         {
             string varName = UniqueVariableName(variableName);
             if (!variables.ContainsKey(varName))
@@ -762,7 +779,7 @@ public class Compiler
                 Console.WriteLine($"line [{lineNumber}]: error: such variable not exists");
                 errors++;
             }
-            this.variable = new Pair(variables[varName], varName);
+            this.variable = new Pair(GetVariableType(varName), varName);
         }
 
         public override void EmitExpresionCode(ICodeEmiter codeEmiter, int outputRegisterNumber)
@@ -796,11 +813,6 @@ public class Compiler
                             errors++;
                             Console.WriteLine($"line [{lineNumber}] error: can not conver from double to bool type");
                         }
-                        if (to == Types.DoubleType)
-                        {
-                            errors++;
-                            Console.WriteLine($"line [{lineNumber}] error: can not conver from double to double type");
-                        }
                     } break;
                 case Types.IntegerType:
                     {
@@ -815,9 +827,15 @@ public class Compiler
 
         public override void EmitExpresionCode(ICodeEmiter codeEmiter, int outputRegisterNumber)
         {
+
+            if (fromType == Type)
+            {
+                expresionNode.EmitExpresionCode(codeEmiter, outputRegisterNumber);
+                return;
+            }
             int registerNumber = registersCount++;
             expresionNode.EmitExpresionCode(codeEmiter, registerNumber);
-            switch(fromType)
+            switch (fromType)
             {
                 case Types.BooleanType: codeEmiter.EmitBoolToIntConversionCode(outputRegisterNumber, registerNumber); break;
                 case Types.DoubleType: codeEmiter.EmitDoubleToIntConversionCode(outputRegisterNumber, registerNumber); break;
@@ -1077,10 +1095,12 @@ public class Compiler
             {
                 if (leftExpresionNode.Type == Types.IntegerType && rightExpresionNode.Type == Types.DoubleType)
                 {
+                    this.relationType = Types.DoubleType;
                     this.leftExpresionNode = new CastExpresionNode(Types.IntegerType, Types.DoubleType, leftExpresionNode);
                 }
                 else if (leftExpresionNode.Type == Types.DoubleType && rightExpresionNode.Type == Types.IntegerType)
                 {
+                    this.relationType = Types.DoubleType;
                     this.rightExpresionNode = new CastExpresionNode(Types.IntegerType, Types.DoubleType, rightExpresionNode);
                 }
                 else
@@ -1257,7 +1277,7 @@ public class Compiler
     {
         ExpressionNode expresionNode;
         Pair variable;
-        public AssignmentExpresionNode(string variableName, ExpressionNode expresionNode) : base(variables[UniqueVariableName(variableName)])
+        public AssignmentExpresionNode(string variableName, ExpressionNode expresionNode) : base(GetVariableType(UniqueVariableName(variableName)))
         {
             string varName = UniqueVariableName(variableName);
             if (!variables.ContainsKey(varName))
@@ -1265,7 +1285,7 @@ public class Compiler
                 Console.WriteLine($"line [{lineNumber}] error: such variable not exists");
                 errors++;
             }
-            this.variable = new Pair(variables[varName], varName);
+            this.variable = new Pair(GetVariableType(varName), varName);
             this.expresionNode = expresionNode;
             if (variable.Type != expresionNode.Type)
             {
@@ -1337,10 +1357,13 @@ public class Compiler
         Scanner scanner = new Scanner(source);
         Parser parser = new Parser(scanner);
         Console.WriteLine();
-        sw = new StreamWriter(file + ".il");
-        GenProlog();
+        sw = new StreamWriter(file + ".ll");
         parser.Parse();
-        GenEpilog();
+        if (!isCodeEmited)
+        {
+            Console.WriteLine("B³¹d sk³adniowy");
+            errors++;
+        }
         sw.Close();
         source.Close();
         if (errors == 0)
@@ -1348,7 +1371,7 @@ public class Compiler
         else
         {
             Console.WriteLine($"\n  {errors} errors detected\n");
-            File.Delete(file + ".il");
+            File.Delete(file + ".ll");
         }
         return errors == 0 ? 0 : 2;
     }
@@ -1365,14 +1388,11 @@ public class Compiler
 
     private static StreamWriter sw;
 
-    private static void GenProlog() { }
-
     public static void GenProgram(INode program)
     {
         LLVMCodeEmiter lLVMCodeEmiter = new LLVMCodeEmiter();
         program.EmitCode(lLVMCodeEmiter);
+        isCodeEmited = true;
     }
-
-    private static void GenEpilog() { }
 
 }

@@ -13,7 +13,7 @@ public Compiler.INode node;
 public Compiler.ExpressionNode expresionNode;
 }
 
-%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation IntConversion DoubleConversion OpenParenthesis CloseParenthesis If Else While Read Write Hex Return
+%token Program OpenBlock Eof CloseBlock Int Bool Double Coma Semicolon Assignment And Or Equal NotEqual Greater GreaterEqual Less LessEqual Plus Minus Multiply Divide BinaryMultiply BinarySum UnaryNegation LogicalNegation OpenParenthesis CloseParenthesis If Else While Read Write Hex Return
 %token <val> String Identificator IntNumber RealNumber Boolean
 
 %type <types> type 
@@ -135,8 +135,8 @@ expressionBinar : expressionBinar BinaryMultiply expressionUnary { $$ = new Comp
 expressionUnary : Minus expressionUnary { $$ = new Compiler.UnaryMinusExpresionNode($2); }
                 | UnaryNegation expressionUnary { $$ = new Compiler.UnaryNegationExpresionNode($2); }
                 | LogicalNegation expressionUnary { $$ = new Compiler.LogicalNegationExpresionNode($2); }
-                | IntConversion expressionUnary { $$ = new Compiler.IntConversionExpresionNode($2); }
-                | DoubleConversion expressionUnary { $$ = new Compiler.DoubleConversionExpresionNode($2); }
+                | OpenParenthesis Int CloseParenthesis expressionUnary { $$ = new Compiler.IntConversionExpresionNode($4); }
+                | OpenParenthesis Double CloseParenthesis expressionUnary { $$ = new Compiler.DoubleConversionExpresionNode($4); }
                 | expression { $$ = $1; }
                 ;
 
