@@ -68,7 +68,7 @@ statement       : singleOperation Semicolon { $$ = $1; }
 if              : If OpenParenthesis expressionAssig CloseParenthesis statement 
                     { $$ = new Compiler.IfNode($3, $5); }
                 | If OpenParenthesis expressionAssig CloseParenthesis statement Else statement 
-                    { $$ = new Compiler.IfElseNode($3, $5, $7); }
+                    { $$ = new Compiler.IfElseNode($3, $5, $7);  } 
                 ;
 
 while           : While OpenParenthesis expressionAssig CloseParenthesis statement 

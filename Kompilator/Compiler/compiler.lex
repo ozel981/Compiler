@@ -8,6 +8,7 @@ Identificator       [a-zA-Z]([a-zA-Z0-9])*
 IntNumber           ([1-9]([0-9])*)|0
 RealNumber          ([1-9]([0-9])*\.([0-9])+)|(0\.([0-9])+)
 Boolean             (true|false)
+HexNumber           ("0x"|"0X")[0-9a-fA-F]*
 
 %%
 
@@ -47,9 +48,14 @@ Boolean             (true|false)
 "return"      { return (int)Tokens.Return; }
 "\n"          { Compiler.lineNumber++; }
 {Comment}     {  }
+{HexNumber}   { yylval.val=int.Parse(yytext.Substring(2), System.Globalization.NumberStyles.HexNumber).ToString(); return (int)Tokens.IntNumber; }
 {String}      { yylval.val=yytext; return (int)Tokens.String; }
 {IntNumber}   { yylval.val=yytext; return (int)Tokens.IntNumber; }
 {RealNumber}  { yylval.val=yytext; return (int)Tokens.RealNumber; }
 {Boolean}     { yylval.val=yytext; return (int)Tokens.Boolean; }
 {Identificator} { yylval.val=yytext; return (int)Tokens.Identificator; }
 <<EOF>>       { return (int)Tokens.Eof; }
+" "           {  }
+"\t"          {  }
+"\r"          {  }
+.             { Compiler.errors++; Console.WriteLine("line [" + Compiler.lineNumber.ToString() + "] error: unknown character"); }

@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-PIILLQS
-// DateTime: 13.06.2021 21:04:39
+// DateTime: 16.06.2021 23:33:24
 // UserName: wpodm
-// Input file <.\compiler.y - 13.06.2021 20:55:13>
+// Input file <.\compiler.y - 16.06.2021 11:38:59>
 
 // options: lines gplex
 
@@ -359,7 +359,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
       case 17: // if -> If, OpenParenthesis, expressionAssig, CloseParenthesis, statement, Else, 
                //       statement
 #line 71 ".\compiler.y"
-                    { CurrentSemanticValue.node = new Compiler.IfElseNode(ValueStack[ValueStack.Depth-5].expresionNode, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node); }
+                    { CurrentSemanticValue.node = new Compiler.IfElseNode(ValueStack[ValueStack.Depth-5].expresionNode, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);  }
 #line default
         break;
       case 18: // while -> While, OpenParenthesis, expressionAssig, CloseParenthesis, statement

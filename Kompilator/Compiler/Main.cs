@@ -21,7 +21,7 @@ public class Compiler
     public static Types actualType;
     public static int registersCount = 0;
     public static int labelsCount = 0;
-    public static int lineNumber = 0;
+    public static int lineNumber = 1;
     public static bool isCodeEmited = false;
 
     public static Types GetVariableType(string variableName)
@@ -146,7 +146,8 @@ public class Compiler
         {
             EmitCode("@IO_INT = constant [3 x i8] c\"%d\\00\"");
             EmitCode("@IO_DOUBLE = constant [4 x i8] c\"%lf\\00\"");
-            EmitCode("@IO_HEX = constant [5 x i8] c\"0X%X\\00\"");
+            EmitCode("@I_HEX = constant [3 x i8] c\"%X\\00\"");
+            EmitCode("@O_HEX = constant [5 x i8] c\"0X%X\\00\"");
             EmitCode("@TRUE = constant[5 x i8] c\"True\\00\"");
             EmitCode("@FALSE = constant[6 x i8] c\"False\\00\"");
             EmitCode("declare i32 @printf(i8*, ...)");
@@ -177,7 +178,7 @@ public class Compiler
         }
         public void EmitHexReadCode(string variableName)
         {
-            EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([5 x i8]* @IO_HEX to i8*), i32* %{variableName})");
+            EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @I_HEX to i8*), i32* %{variableName})");
         }
         public void EmitWriteCode(Types type, int registerNumber)
         {
@@ -204,7 +205,7 @@ public class Compiler
         }
         public void EmitHexWriteCode(int registerNumber)
         {
-            EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([5 x i8]* @IO_HEX to i8*), i32 %tmp{registerNumber})");
+            EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([5 x i8]* @O_HEX to i8*), i32 %tmp{registerNumber})");
         }
         public void EmitStringWriteCode(string inscription)
         {
@@ -302,11 +303,11 @@ public class Compiler
             string typeString = GetTypeString(type);
             if (type == Types.DoubleType)
             {
-                EmitCode($"%tmp{outputRegisterNumber} = fsub {typeString} 0.0, %tmp{registerNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = fmul {typeString} -1.0, %tmp{registerNumber}");
             }
             else
             {
-                EmitCode($"%tmp{outputRegisterNumber} = sub {typeString} 0, %tmp{registerNumber}");
+                EmitCode($"%tmp{outputRegisterNumber} = mul {typeString} -1, %tmp{registerNumber}");
             }
         }
         public void EmitUnaryNegationCode(int outputRegisterNumber, int registerNumber)
@@ -1361,7 +1362,7 @@ public class Compiler
         parser.Parse();
         if (!isCodeEmited)
         {
-            Console.WriteLine("B³¹d sk³adniowy");
+            Console.WriteLine("Syntax errors");
             errors++;
         }
         sw.Close();
